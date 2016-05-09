@@ -233,7 +233,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function getCurrentUrl() {
     return new Promise(function(resolve, reject) {
       chrome.tabs.query({'active': true, 'lastFocusedWindow': true}, function (tabs) {
-        resolve(tabs[0].url);
+        resolve(tabs[0].url.split('?')[0]);
       });
     });
   }
