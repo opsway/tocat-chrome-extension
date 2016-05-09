@@ -24,7 +24,6 @@ document.addEventListener('DOMContentLoaded', function() {
    * @param value
    */
   function setBudgetOfTask(value) {
-    bkg.console.log('budget ', value);
     var budgetPlace  = document.getElementById('budget');
     budgetPlace.innerHTML = value;
   }
@@ -93,7 +92,6 @@ document.addEventListener('DOMContentLoaded', function() {
     return new Promise(function(resolve, reject) {
       TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/budget').then(function(data) {
         var orders = getAdjustedOrdersToTask(deleteId, data.budget);
-        bkg.console.log('orders ', orders);
         TOCAT_TOOLS.postJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/budget', {
           budget: orders
         }).then(function(data) {
@@ -217,8 +215,7 @@ document.addEventListener('DOMContentLoaded', function() {
    */
   function init() {
     // get users from api
-    // todo: get not all users, get only resolvers
-    TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users')
+    TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users?search=role != Manager')
       .then(function(data) {
         users = data;
         rebuildSelect(users);

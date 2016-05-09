@@ -177,7 +177,7 @@ document.addEventListener('DOMContentLoaded', function() {
       case 'getSelectedTask':
         task = JSON.parse(msg.selectedTask);
         // todo: get not all users, get only resolvers
-        TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users')
+        TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users?search=role != Manager')
           .then(function(data) {
             rebuildSelect(data);
             fillInformationAboutTask(task);
