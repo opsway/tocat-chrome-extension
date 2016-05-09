@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
    * @param value
    */
   function setBudgetOfTask(value) {
-    var budgetPlace = document.getElementById('issueBudget');
+    var budgetPlace = document.getElementById('budget');
     budgetPlace.innerHTML = value;
   }
 
@@ -116,6 +116,17 @@ document.addEventListener('DOMContentLoaded', function() {
     return formattedOrders;
   }
 
+  function rmUsedOrders(usedOrders) {
+    var usedOrders = formatOrders(usedOrders);
+    var selectBoxOrders = document.getElementById('selectOrder');
+
+    for (var i = 0; i< selectBoxOrders.length; i++){
+      if (usedOrders[selectBoxOrders.options[i].value]) {
+        selectBoxOrders.remove(i);
+      }
+    }
+  }
+
   /**
    * Show free budget accordingly to selected order
    */
@@ -152,6 +163,7 @@ document.addEventListener('DOMContentLoaded', function() {
         orders = formatOrders(receivedOrders);
         rebuildOrdersSelect(receivedOrders);
         updateOrderData();
+        port.postMessage({ message: 'getSelectedOrder' });
       }, function(data) {
       });
   }
@@ -159,7 +171,6 @@ document.addEventListener('DOMContentLoaded', function() {
   init();
 
   port.postMessage({ message: 'getSelectedTask' });
-  port.postMessage({ message: 'getSelectedResolver' });
 
   port.onMessage.addListener(function(msg) {
     switch (msg.message) {
@@ -172,6 +183,18 @@ document.addEventListener('DOMContentLoaded', function() {
             fillInformationAboutTask(task);
           }, function(err) {
           });
+        break;
+      case 'getSelectedOrder':
+        if (msg.selectedOrder) {
+          // we try to edit order not add
+          var selectBox = document.getElementById('selectOrder');
+          selectBox.value = msg.selectedOrder;
+          selectBox.disabled = true;
+          updateOrderData();
+        } else {
+          // we add new order
+          rmUsedOrders(task.orders);
+        }
         break;
       default:
         break;
@@ -207,10 +230,6 @@ document.addEventListener('DOMContentLoaded', function() {
     port.postMessage({
       message: 'setSelectedTask',
       selectedTask: ''
-    });
-    port.postMessage({
-      message: 'setSelectedResolver',
-      selectedResolver: ''
     });
     TOCAT_TOOLS.goTo('index.html');
   });

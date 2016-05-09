@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
    * @param value
    */
   function setBudgetOfTask(value) {
+    bkg.console.log('budget ', value);
     var budgetPlace  = document.getElementById('budget');
     budgetPlace.innerHTML = value;
   }
@@ -68,33 +69,85 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   /**
+   *
+   * @param id
+   * @returns {*}
+   */
+  function getAdjustedOrdersToTask(id, orders) {
+    var results = orders;
+    for (var i = 0 ; i < results.length ; i++) {
+      if (results[i].order_id == id) {
+        results.splice(i, 1);
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   *
+   * @param deleteId
+   * @returns {Promise}
+   */
+  function deleteOrderFromTask(deleteId) {
+    return new Promise(function(resolve, reject) {
+      TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/budget').then(function(data) {
+        var orders = getAdjustedOrdersToTask(deleteId, data.budget);
+        bkg.console.log('orders ', orders);
+        TOCAT_TOOLS.postJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/budget', {
+          budget: orders
+        }).then(function(data) {
+          resolve(data);
+        }, function(err) {
+          reject(err);
+        })
+      }, function(err) {
+        reject(err);
+      });
+    });
+  }
+
+  /**
    * add clickHandlers for all new orders in table
    */
   function addClickHandlers() {
     var editButtons = getRedirectableButtons('[data-order-edit-id]');
+    var deleteButtons = getRedirectableButtons('[data-order-delete-id]');
     if (editButtons.length) {
       for (var i = 0 ; i < editButtons.length ; i++) {
         editButtons[i].addEventListener('click', function(e) {
           e.preventDefault();
-          // store id of order, set that we change exiting not create new.
+          port.postMessage({
+            message: 'setSelectedTask',
+            selectedTask: JSON.stringify(task)
+          });
+          port.postMessage({
+            message: 'setSelectedOrder',
+            selectedOrder: e.target.dataset.orderEditId
+          });
           TOCAT_TOOLS.goTo('edit.html');
         });
       }
     }
-    // todo: add clickHandlers to rm functionality
+    if (deleteButtons.length) {
+      for (var i = 0 ; i < deleteButtons.length ; i++) {
+        deleteButtons[i].addEventListener('click', function(e) {
+          e.preventDefault();
+          deleteOrderFromTask(e.target.dataset.orderDeleteId).then(function(data) {
+            e.target.parentNode.parentNode.classList.add('hide');
+            updateTask();
+          });
+        });
+      }
+    }
   }
 
   /**
    * Get all orders of current task and redraw table
-   * @param taskId
+   * @param task
    */
-  function rebuildOrders(taskId) {
-    // todo: get orders associated with current task not all orders
-    TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/orders')
-      .then(function(data) {
-        drawOrdersTable(data);
-      }, function(data) {
-      });
+  function rebuildOrders(task) {
+    drawOrdersTable(task.orders);
   }
 
   /**
@@ -109,7 +162,8 @@ document.addEventListener('DOMContentLoaded', function() {
         '<tr>' +
         '<td>' + orders[i].name + '</td>' +
         '<td>' + orders[i].paid + '</td>' +
-        '<td>' + orders[i].free_budget + '</td>' +
+          // todo: check name of budget from this order to current task
+        '<td>' + orders[i].BUDGET + '</td>' +
         '<td>' +
         '<a data-order-edit-id = ' + orders[i].id + ' href="edit.html">edit</a>/' +
         '<a data-order-delete-id = ' + orders[i].id + ' href="edit.html">delete</a>' +
@@ -132,6 +186,31 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+
+  function updateTask() {
+    getCurrentTask().then(function(receivedTask) {
+      task = receivedTask;
+      if (receivedTask) {
+        rebuildOrders(task);
+        fillInformationAboutTask(task);
+        addClickHandlers();
+      } else {
+        // create task on this url
+        getCurrentUrl().then(function(data) {
+          TOCAT_TOOLS.postJSON(TOCAT_TOOLS.urlTocat + '/tasks', {
+            external_id: data
+          }).then(function(receivedNewTask) {
+            task = receivedNewTask;
+            alert('task created');
+            rebuildOrders(task);
+            fillInformationAboutTask(task);
+            addClickHandlers();
+          })
+        })
+      }
+    });
+  }
+
   /**
    * On firstRender redraw select with resolvers and table with orders
    * Set resolver and additional parameters of current task
@@ -143,26 +222,7 @@ document.addEventListener('DOMContentLoaded', function() {
       .then(function(data) {
         users = data;
         rebuildSelect(users);
-        getCurrentTask().then(function(receivedTask) {
-          task = receivedTask;
-          if (receivedTask) {
-            // task already exist
-            rebuildOrders();
-            fillInformationAboutTask(receivedTask);
-          } else {
-            // create task on this url
-            getCurrentUrl().then(function(data) {
-              TOCAT_TOOLS.postJSON(TOCAT_TOOLS.urlTocat + '/tasks', {
-                external_id: data
-              }).then(function(receivedNewTask) {
-                task = receivedNewTask;
-                alert('task created');
-                rebuildOrders();
-                fillInformationAboutTask(receivedNewTask);
-              })
-            })
-          }
-        });
+        updateTask();
       }, function(data) {
 
       });
@@ -204,8 +264,10 @@ document.addEventListener('DOMContentLoaded', function() {
    * @returns {Promise.<T>}
    */
   function getCurrentTask() {
-    var urlPromise = getCurrentUrl();
-    var mapUrlTask = getMapUrlTask();
+
+    // temporary solution to get task associated with url
+    // to get task using external id does not work
+    /*var mapUrlTask = getMapUrlTask();
     return Promise.all([urlPromise, mapUrlTask])
       .then(function(values) {
         var url = values[0];
@@ -214,22 +276,32 @@ document.addEventListener('DOMContentLoaded', function() {
         return map[url];
       }, function(reason) {
 
-      })
+      })*/
+    return new Promise(function(resolve, reject) {
+      getCurrentUrl().then(function(data) {
+        // lets use task with id = 1
+        TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/task/1').then(function(data) {
+          resolve(data);
+        }, function(err) {
+          reject(err);
+        })
+      });
+    });
   }
   // TEMPORARY SOLUTION END
 
   init();
 
+  port.postMessage({
+    message: 'setSelectedOrder',
+    selectedOrder: ''
+  });
+
   addOrderBtn.addEventListener('click', function() {
     if (task) {
-      var selectedResolver = getSelectedResolverHtmlObject();
       port.postMessage({
         message: 'setSelectedTask',
         selectedTask: JSON.stringify(task)
-      });
-      port.postMessage({
-        message: 'setSelectedResolver',
-        selectedResolver: selectedResolver.value
       });
       TOCAT_TOOLS.goTo('edit.html');
     }
@@ -268,12 +340,5 @@ document.addEventListener('DOMContentLoaded', function() {
       TOCAT_TOOLS.deleteJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/accept');
     }
   });
-
-
-  /*port.onMessage.addListener(function(msg) {
-    switch (msg.message) {
-
-    }
-  });*/
 
 });

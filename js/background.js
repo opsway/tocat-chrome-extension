@@ -1,5 +1,5 @@
 localStorage.selectedTask = '';
-localStorage.selectedResolver = '';
+localStorage.selectedOrder = '';
 
 chrome.extension.onConnect.addListener(function(port) {
   port.onMessage.addListener(function(msg) {
@@ -17,17 +17,17 @@ chrome.extension.onConnect.addListener(function(port) {
           selectedTask: localStorage.selectedTask
         });
         break;
-      case 'setSelectedResolver':
-        localStorage.selectedResolver = msg.selectedResolver;
+      case 'setSelectedOrder':
+        localStorage.selectedOrder = msg.selectedOrder;
         port.postMessage({
-          message: 'setSelectedResolver',
-          selectedResolver: localStorage.selectedResolver
+          message: 'setSelectedOrder',
+          selectedOrder: localStorage.selectedOrder
         });
         break;
-      case 'getSelectedResolver':
+      case 'getSelectedOrder':
         port.postMessage({
-          message: 'getSelectedResolver',
-          selectedResolver: localStorage.selectedResolver
+          message: 'getSelectedOrder',
+          selectedOrder: localStorage.selectedOrder
         });
         break;
       default:
