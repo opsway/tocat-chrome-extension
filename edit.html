@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test title</title>
+    <script src="js/tools.js"></script>
+    <script src="js/edit.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+          integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container container-width">
+    <div class="row text-center">
+        TOCAT - collaboration magic
+    </div>
+    <div class="row">
+        <div class="col-sm-2 col-md-2 col-xs-2">
+            <label><input type="checkbox" id="checkbox-accepted" value="">Accepted</label>
+        </div>
+        <div class="col-sm-10 col-md-10 col-xs-10">
+            Resolver: <select id="selectResolver"></select>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-2 col-md-2 col-xs-2">
+            <label><input type="checkbox" id="checkbox-paid"  value="" disabled>Paid</label>
+        </div>
+        <div class="col-md-10 col-sm-10 col-xs-10">
+            Budget: <span id="budget"></span>
+        </div>
+    </div>
+    <hr>
+
+
+    <div class="row top-buffer"></div>
+    <div class="row">
+        <div class="container">
+            <div class="row row-margin-5">
+                <div class="col-sm-2 col-md-2 col-xs-2">Order</div>
+                <div class="col-sm-8 col-md-8 col-xs-8">
+                    <select id="selectOrder">
+                    </select>
+                </div>
+            </div>
+            <div class="row row-margin-5">
+                <div class="col-sm-2 col-md-2 col-xs-2">Free budget</div>
+                <div class="col-sm-8 col-md-8 col-xs-8">
+                    <span id="freeBudget">0</span>
+                </div>
+            </div>
+            <div class="row row-margin-5">
+                <div class="col-sm-2 col-md-2 col-xs-2">Budget</div>
+                <div class="col-sm-8 col-md-8 col-xs-8">
+                    <input type="number" id="issueBudget" min="1">
+                </div>
+            </div>
+            <div class="row row-margin-5 red alert alert-danger hidden text-center" id="alert">
+            </div>
+            <div class="row row-margin-5">
+                <div class="col-sm-6 col-md-6 col-xs-6 text-center">
+                    <button class="btn btn-success" id="save-btn">Save</button>
+                </div>
+                <div class="col-sm-6 col-md-6 col-xs-6 text-center">
+                    <button class="btn btn-danger" id="cancel-btn">Cancel</button>
+                </div>
+            </div>
+            <div class="row top-buffer"></div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>
