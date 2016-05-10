@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
    * Show free budget accordingly to selected order
    */
   function updateOrderData() {
-    if (orders) {
+    if (!TOCAT_TOOLS.isEmptyObject(orders)) {
       var orderId = selectOrder.options[selectOrder.selectedIndex].value;
       var freeBudget = document.getElementById('freeBudget');
 
@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (checkBudgetOfTask()) {
         var orderId = selectOrder.options[selectOrder.selectedIndex].value;
         var budget = parseInt(document.getElementById('issueBudget').value, 10);
-        // todo: redo it. Migrate all code to server
+
         TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/budget')
           .then(function(res) {
             var receivedBudget = res.budget;
@@ -221,6 +221,8 @@ document.addEventListener('DOMContentLoaded', function() {
               TOCAT_TOOLS.goTo('index.html');
             }, function(err) {
             });
+          }, function(err) {
+            alert('Promise. Try to get budget ' + err);
           });
       }
     }

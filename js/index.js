@@ -140,12 +140,34 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  function applyBudget(receivedBudget , orders) {
+    var result = [];
+    for (var i = 0 ; i < receivedBudget.length; i++) {
+      for (var j = 0 ; j < orders.length; j++) {
+        if (receivedBudget[i].order_id == orders[j].id) {
+          result.push({
+            id: orders[j].id,
+            name: orders[j].name,
+            paid:  orders[j].paid,
+            budgetForTask: receivedBudget[i].budget
+          })
+        }
+      }
+    }
+    return result;
+  }
+
   /**
    * Get all orders of current task and redraw table
    * @param task
    */
   function rebuildOrders(task) {
-    drawOrdersTable(task.orders);
+    TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/budget').then(function(data) {
+      var orders = applyBudget(data.budget, task.orders);
+      drawOrdersTable(orders);
+
+      addClickHandlers()
+    });
   }
 
   /**
@@ -160,8 +182,7 @@ document.addEventListener('DOMContentLoaded', function() {
         '<tr>' +
         '<td>' + orders[i].name + '</td>' +
         '<td>' + orders[i].paid + '</td>' +
-          // todo: check name of budget from this order to current task
-        '<td>' + orders[i].BUDGET + '</td>' +
+        '<td>' + orders[i].budgetForTask + '</td>' +
         '<td>' +
         '<a data-order-edit-id = ' + orders[i].id + ' href="edit.html">edit</a>/' +
         '<a data-order-delete-id = ' + orders[i].id + ' href="edit.html">delete</a>' +
@@ -188,44 +209,31 @@ document.addEventListener('DOMContentLoaded', function() {
   function updateTask() {
     getCurrentTask().then(function(receivedTask) {
       task = receivedTask;
-      if (receivedTask) {
+      if (!TOCAT_TOOLS.isEmptyObject(receivedTask)) {
         rebuildOrders(task);
         fillInformationAboutTask(task);
-        addClickHandlers();
       } else {
         // create task on this url
         getCurrentUrl().then(function(data) {
           TOCAT_TOOLS.postJSON(TOCAT_TOOLS.urlTocat + '/tasks', {
             external_id: data
           }).then(function(receivedNewTask) {
-            task = receivedNewTask;
             alert('task created');
-            rebuildOrders(task);
-            fillInformationAboutTask(task);
-            addClickHandlers();
-          })
+            TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/task/' + receivedNewTask.id).then(function(receivedNewTask) {
+              task = receivedNewTask;
+              // rebuildOrders(task);
+              fillInformationAboutTask(task);
+            });
+          });
         })
       }
     });
   }
 
-  /**
-   * On firstRender redraw select with resolvers and table with orders
-   * Set resolver and additional parameters of current task
-   */
   function init() {
-    // get users from api
-    TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users?search=role != Manager')
-      .then(function(data) {
-        users = data;
-        rebuildSelect(users);
-        updateTask();
-      }, function(data) {
-
-      });
+    updateTask();
   }
 
-  // TEMPORARY SOLUTION START
   /**
    * Get url of current opened tab
    * @returns {Promise}
@@ -239,53 +247,30 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   /**
-   * Get map url => task object
-   * @returns {Promise.<T>}
-   */
-  function getMapUrlTask() {
-    return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/tasks')
-      .then(function(data) {
-        var map = {};
-        // look like 'url' => 'task object'
-        for (var i = 0 ; i < data.length ; i++) {
-          map[data[i].external_id] = data[i];
-        }
-        return map;
-      }, function(data) {
-        return data;
-      });
-  }
-
-  /**
    * Get task which associated with current url
    * @returns {Promise.<T>}
    */
   function getCurrentTask() {
-
-    // temporary solution to get task associated with url
-    // to get task using external id does not work
-    /*var mapUrlTask = getMapUrlTask();
-    return Promise.all([urlPromise, mapUrlTask])
-      .then(function(values) {
-        var url = values[0];
-        var map = values[1];
-        // return task object
-        return map[url];
-      }, function(reason) {
-
-      })*/
     return new Promise(function(resolve, reject) {
       getCurrentUrl().then(function(data) {
         // lets use task with id = 1
-        TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/task/1').then(function(data) {
-          resolve(data);
+        TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/tasks/?search=external_id=' + data).then(function(data) {
+          if (data.length) {
+            // todo: rm it from here
+            rebuildSelect(data[0].potential_resolvers);
+            TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/task/' + data[0].id).then(function(receivedTask) {
+              resolve(receivedTask);
+            });
+          } else {
+            rebuildSelect([]);
+            resolve({});
+          }
         }, function(err) {
           reject(err);
         })
       });
     });
   }
-  // TEMPORARY SOLUTION END
 
   init();
 
