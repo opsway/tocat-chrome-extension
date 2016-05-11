@@ -83,13 +83,38 @@ var TOCAT_TOOLS = (function() {
     return true;
   }
 
+  /**
+   *
+   * @param url
+   */
+  function updateIcon(url) {
+    TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/tasks/?search=external_id=' + url.split('?')[0]).then(function(data) {
+      var orders = [];
+      var totalBudget = 0;
+      if (data.length) {
+        orders = data[0].orders
+      }
+
+      for (var i = 0 ; i < orders.length ; i++) {
+        totalBudget += parseInt(orders[i].budget, 10);
+      }
+
+      if (totalBudget && totalBudget <= 9000) {
+        chrome.browserAction.setBadgeText({text: totalBudget.toString()});
+      } else {
+        chrome.browserAction.setBadgeText({text: '—'});
+      }
+    });
+  }
+
   return {
     goTo: goTo,
     getJSON: getJSONRequest,
     postJSON: postJSONRequest,
     urlTocat: urlTocat,
     deleteJSON: deleteJSONRequest,
-    isEmptyObject: isEmptyObject
+    isEmptyObject: isEmptyObject,
+    updateIcon: updateIcon
   }
 
 })();

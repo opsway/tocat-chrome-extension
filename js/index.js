@@ -134,6 +134,9 @@ document.addEventListener('DOMContentLoaded', function() {
           deleteOrderFromTask(e.target.dataset.orderDeleteId).then(function(data) {
             e.target.parentNode.parentNode.classList.add('hide');
             updateTask();
+            getCurrentUrl().then(function(data) {
+              TOCAT_TOOLS.updateIcon(data);
+            });
           });
         });
       }
@@ -320,6 +323,10 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
       TOCAT_TOOLS.deleteJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/accept');
     }
+  });
+
+  getCurrentUrl().then(function(data) {
+    TOCAT_TOOLS.updateIcon(data);
   });
 
 });
