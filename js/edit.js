@@ -47,7 +47,6 @@ document.addEventListener('DOMContentLoaded', function() {
     selectResolver.options.length = 0;
 
     selectResolver.options.add(new Option('is not selected', 0));
-    // todo: filter only developer
     for (var i = 0; i < users.length ; i++) {
       selectResolver.options.add(new Option(users[i].name, users[i].id));
     }
@@ -116,6 +115,10 @@ document.addEventListener('DOMContentLoaded', function() {
     return formattedOrders;
   }
 
+  /**
+   * Remove from all orders attached to task orders
+   * @param usedOrders
+   */
   function rmUsedOrders(usedOrders) {
     var usedOrders = formatOrders(usedOrders);
     var selectBoxOrders = document.getElementById('selectOrder');
@@ -139,7 +142,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // test function to check duplicate of orders
+  /**
+   * Add or change order in budget
+   * @param receivedBudget
+   * @param newBudget
+   * @returns {*}
+   */
   function testNewBudget(receivedBudget, newBudget) {
     if (!receivedBudget) {
       return [newBudget];
@@ -157,7 +165,6 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function init() {
-    // todo: get orders associated with current task not all orders
     TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/orders')
       .then(function(receivedOrders) {
         orders = formatOrders(receivedOrders);

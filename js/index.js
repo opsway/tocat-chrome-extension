@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     bkg = chrome.extension.getBackgroundPage(),
     port = chrome.extension.connect({name: "connection with background"}),
     url = null,
+    // task is global variable. Redo it
     task = null;
 
   /**
@@ -52,7 +53,6 @@ document.addEventListener('DOMContentLoaded', function() {
     selectResolver.options.length = 0;
 
     selectResolver.options.add(new Option('is not selected', 0));
-    // todo: filter only developer
     for (var i = 0; i < users.length ; i++) {
         selectResolver.options.add(new Option(users[i].name, users[i].id));
     }
@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   /**
-   *
+   * Remove order with id from array of all orders
    * @param id
    * @returns {*}
    */
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
           resolve(data);
         }, function(err) {
           reject(err);
-        })
+        });
       }, function(err) {
         reject(err);
       });
@@ -134,6 +134,9 @@ document.addEventListener('DOMContentLoaded', function() {
           deleteOrderFromTask(e.target.dataset.orderDeleteId).then(function(data) {
             e.target.parentNode.parentNode.classList.add('hide');
             updateTask();
+            getCurrentUrl().then(function(data) {
+              TOCAT_TOOLS.updateIcon(data);
+            });
           });
         });
       }
@@ -253,7 +256,6 @@ document.addEventListener('DOMContentLoaded', function() {
   function getCurrentTask() {
     return new Promise(function(resolve, reject) {
       getCurrentUrl().then(function(data) {
-        // lets use task with id = 1
         TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/tasks/?search=external_id=' + data).then(function(data) {
           if (data.length) {
             // todo: rm it from here
@@ -321,6 +323,10 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
       TOCAT_TOOLS.deleteJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/accept');
     }
+  });
+
+  getCurrentUrl().then(function(data) {
+    TOCAT_TOOLS.updateIcon(data);
   });
 
 });
