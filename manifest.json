@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name":"TOCAT",
-  "version":"0.1",
+  "version":"0.3",
   "description":"TOCAT plugin",
   "browser_action": {
     "default_icon": "icon.png",
@@ -9,7 +9,6 @@
     "default_popup": "index.html"
   },
   "permissions": [
-    "https://maxcdn.bootstrapcdn.com/bootstrap/*",
     "storage",
     "http://test.tocat.opsway.com/*",
     "tabs"
