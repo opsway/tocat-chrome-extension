@@ -1,5 +1,5 @@
-.container-width {
-    width: 800px;
+body {
+    width: 750px;
 }
 
 .top-buffer {
@@ -8,4 +8,47 @@
 
 .row-margin-5 {
     margin-top:5px;
+}
+
+.row-height-20 {
+    height:20px;
+}
+
+table.ordersGrid {
+    border-collapse: collapse;
+    border: 1px solid #CCB;
+    width: 100%;
+}
+
+table.ordersGrid td, table.ordersGrid th {
+    padding: 5px;
+    border: 1px solid #E0E0E0;
+    text-align: center;
+}
+
+table.testgrid th {
+    background: #E5E5E5;
+    text-align: left;
+    text-align: center;
+}
+
+input.invalid {
+    background: #ff7967;
+    color: #FDFDFD;
+    text-align: center;
+}
+
+.pointer {
+    cursor: pointer;
+}
+
+.spinner {
+    position: absolute;
+    top: 50px;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 80px;
+    height: 80px;
+    margin: 0 auto;
 }

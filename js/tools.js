@@ -10,16 +10,30 @@ if (!chrome.runtime) {
 }
 
 var TOCAT_TOOLS = (function() {
+  var counterRequest = 0;
+  var counterResponse = 0;
 
   var urlTocat = 'http://test.tocat.opsway.com';
 
-  function goTo(file) {
-    window.location.href = file;
+  // show and hide spinner
+  function checkCounters() {
+    setTimeout(function() {
+      var spinner = document.getElementById('spinner');
+      if ((counterRequest == counterResponse) && spinner) {
+        spinner.innerHTML = '';
+      }
+
+      if ((counterRequest != counterResponse) && spinner) {
+        spinner.innerHTML = '<img src="spinner.gif">';
+      }
+    }, 50);
   }
 
   function getJSONRequest(url) {
     return new Promise(function(resolve, reject) {
       var xhr = new XMLHttpRequest();
+      counterRequest += 1;
+      checkCounters();
       xhr.open('get', url, true);
       xhr.responseType = 'json';
       xhr.onload = function() {
@@ -27,8 +41,10 @@ var TOCAT_TOOLS = (function() {
         if (status == 200) {
           resolve(xhr.response);
         } else {
-          reject(status);
+          reject(xhr.response);
         }
+        counterResponse += 1;
+        checkCounters();
       };
       xhr.send();
     });
@@ -37,6 +53,8 @@ var TOCAT_TOOLS = (function() {
   function deleteJSONRequest(url) {
     return new Promise(function(resolve, reject) {
       var xhr = new XMLHttpRequest();
+      counterRequest += 1;
+      checkCounters();
       xhr.open('delete', url, true);
       xhr.responseType = 'json';
       xhr.onload = function() {
@@ -44,8 +62,10 @@ var TOCAT_TOOLS = (function() {
         if (status == 200) {
           resolve(xhr.response);
         } else {
-          reject(status);
+          reject(xhr.response);
         }
+        counterResponse += 1;
+        checkCounters();
       };
       xhr.send();
     });
@@ -54,6 +74,8 @@ var TOCAT_TOOLS = (function() {
   function postJSONRequest(url, obj) {
     return new Promise(function(resolve, reject) {
       var xhr = new XMLHttpRequest();
+      counterRequest += 1;
+      checkCounters();
       xhr.open('post', url, true);
       xhr.responseType = 'json';
       xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
@@ -62,8 +84,10 @@ var TOCAT_TOOLS = (function() {
         if (status == 200 || status == 201) {
           resolve(xhr.response);
         } else {
-          reject(status);
+          reject(xhr.response);
         }
+        counterResponse += 1;
+        checkCounters();
       };
       xhr.send(JSON.stringify(obj));
     });
@@ -99,6 +123,7 @@ var TOCAT_TOOLS = (function() {
         totalBudget += parseInt(orders[i].budget, 10);
       }
 
+      // todo: refactor me
       if (totalBudget && totalBudget <= 9000) {
         chrome.browserAction.setBadgeText({text: totalBudget.toString()});
       } else {
@@ -107,14 +132,25 @@ var TOCAT_TOOLS = (function() {
     });
   }
 
+  /**
+   *
+   * @returns {string}
+   */
+  function guidGenerator() {
+    var S4 = function() {
+      return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
+    };
+    return (S4()+S4()+"-"+S4()+"-"+S4()+"-"+S4()+"-"+S4()+S4()+S4());
+  }
+
   return {
-    goTo: goTo,
     getJSON: getJSONRequest,
     postJSON: postJSONRequest,
     urlTocat: urlTocat,
     deleteJSON: deleteJSONRequest,
     isEmptyObject: isEmptyObject,
-    updateIcon: updateIcon
+    updateIcon: updateIcon,
+    guidGenerator: guidGenerator
   }
 
 })();
