@@ -114,16 +114,20 @@ var TOCAT_TOOLS = (function() {
   function updateIcon(url) {
     TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/tasks/?search=external_id=' + url.split('?')[0]).then(function(data) {
       var orders = [];
-      var totalBudget = 0;
+      var totalBudget = null;
       if (data.length) {
         orders = data[0].orders
+        totalBudget = 0;
+        for (var i = 0 ; i < orders.length ; i++) {
+          totalBudget += parseInt(orders[i].budget, 10);
+        }
       }
 
-      for (var i = 0 ; i < orders.length ; i++) {
-        totalBudget += parseInt(orders[i].budget, 10);
+      if (totalBudget === 0) {
+        chrome.browserAction.setBadgeText({text: '0'});
+        return;
       }
 
-      // todo: refactor me
       if (totalBudget && totalBudget <= 9000) {
         chrome.browserAction.setBadgeText({text: totalBudget.toString()});
       } else {

@@ -333,6 +333,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 refreshTask();
                 showInformation('Task has been updated');
                 updateAllOrders();
+                getCurrentUrl().then(function(data) {
+                  TOCAT_TOOLS.updateIcon(data);
+                }, errorCather);
               }, function(err) {
                 showErrors(err.errors)
               });
@@ -346,6 +349,9 @@ document.addEventListener('DOMContentLoaded', function() {
                   }, task).then(function() {
                     showInformation('Task has been created');
                     updateAllOrders();
+                    getCurrentUrl().then(function(data) {
+                      TOCAT_TOOLS.updateIcon(data);
+                    }, errorCather);
                   });
                 }, errorCather);
               });
@@ -392,6 +398,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 hideTable();
               }
               refreshTask();
+              getCurrentUrl().then(function(data) {
+                TOCAT_TOOLS.updateIcon(data);
+              }, errorCather);
             }, function(err) {
               showErrors(err.errors);
             });
