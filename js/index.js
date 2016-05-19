@@ -368,13 +368,11 @@ document.addEventListener('DOMContentLoaded', function() {
             getOptionValuesForEdit: function (grid, column, rowIndex) {
               var selectedValues = editableGrid.getValueAt(rowIndex, columnIndex);
               var options = getAdjustedFreeOrders(editableGrid, globalAllOrders, selectedValues);
+              console.log('options ', options);
               return options;
-            },
+            }
           }));
         }
-      },
-      rowRemoved: function() {
-        updateAllOrders();
       }
     });
     editableGrid.load({"metadata": metadata, "data": data});
@@ -407,10 +405,14 @@ document.addEventListener('DOMContentLoaded', function() {
       });
 
     }}));
-    editableGrid.renderGrid("tablecontent", "ordersGrid");
 
-    // todo: rm its
-    window.editableGrid = editableGrid;
+    editableGrid.renderGrid("tablecontent", "ordersGrid");
+    // ugly solution
+    var orders = document.getElementsByClassName('editablegrid-order');
+    for (var i = 0 ; i < orders.length ; i++) {
+      orders[i].click();
+    }
+    editableGrid.refreshGrid();
   }
 
   /**
@@ -436,6 +438,7 @@ document.addEventListener('DOMContentLoaded', function() {
       results.push(parseInt(editableGrid.getValueAt(i, 0)));
     }
 
+    console.log('results ', results);
     return results;
   }
 
@@ -459,7 +462,9 @@ document.addEventListener('DOMContentLoaded', function() {
    */
   function getAdjustedFreeOrders(editableGrid, allOrders, notThisId) {
     var usedOrders = getAllSelectedValuesWithoutOne(editableGrid, notThisId);
+    console.log('usedOrders ', usedOrders);
     var freeOrders = getFreeOrders(allOrders, usedOrders);
+    console.log('freeOrders ', freeOrders);
     var adjustedOrders = {}
     for (var prop in freeOrders) {
       if (freeOrders.hasOwnProperty(prop)) {
