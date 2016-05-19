@@ -9,7 +9,38 @@ document.addEventListener('DOMContentLoaded', function() {
     url = null,
     // task is global variable. Redo it
     task = null,
-    editableGrid = null;
+    editableGrid = null,
+    globalAllOrders = null;
+
+  function updateAllOrders() {
+    getAllOrders().then(function(data) {
+      globalAllOrders = adjustArrayOfObject(data, 'id')
+    }, errorCather);
+  }
+
+  /**
+   *
+   * @param array
+   * @param property
+   * @returns {*}
+   */
+  function adjustArrayOfObject(array, property) {
+    if (!array.length) {
+      return array;
+    }
+
+    if (!array[0].hasOwnProperty(property)) {
+      console.error('Array does not have property with name ' + property.toString());
+      return;
+    }
+
+    var result = {};
+    for (var i = 0 ; i < array.length ; i++) {
+      result[array[i][property]] = array[i];
+    }
+
+    return result;
+  }
 
   /**
    * temporary solution
@@ -301,6 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
               }, task).then(function(data) {
                 refreshTask();
                 showInformation('Task has been updated');
+                updateAllOrders();
               }, function(err) {
                 showErrors(err.errors)
               });
@@ -313,6 +345,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     task_id: task.id
                   }, task).then(function() {
                     showInformation('Task has been created');
+                    updateAllOrders();
                   });
                 }, errorCather);
               });
@@ -327,6 +360,21 @@ document.addEventListener('DOMContentLoaded', function() {
             editableGrid.setValueAt(rowIdx, 1, data.free_budget);
           });
         }
+      },
+      openedCellEditor: function(rowIndex, columnIndex) {
+        // select with orders
+        if (columnIndex === 0) {
+          editableGrid.setEnumProvider("order", new EnumProvider({
+            getOptionValuesForEdit: function (grid, column, rowIndex) {
+              var selectedValues = editableGrid.getValueAt(rowIndex, columnIndex);
+              var options = getAdjustedFreeOrders(editableGrid, globalAllOrders, selectedValues);
+              return options;
+            },
+          }));
+        }
+      },
+      rowRemoved: function() {
+        updateAllOrders();
       }
     });
     editableGrid.load({"metadata": metadata, "data": data});
@@ -363,6 +411,62 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // todo: rm its
     window.editableGrid = editableGrid;
+  }
+
+  /**
+   *
+   * @param editableGrid
+   * @param notThisId
+   * @returns {Array}
+   */
+  function getAllSelectedValuesWithoutOne(editableGrid, notThisId) {
+    var rowCount = editableGrid.getTotalRowCount();
+    var results = [];
+
+    for (var i = 0 ; i < rowCount ; i++) {
+      var order = editableGrid.getValueAt(i, 0);
+      if (order === 'Select') {
+        continue;
+      }
+
+      if (parseInt(order, 10) == parseInt(notThisId, 10)) {
+        continue;
+      }
+
+      results.push(parseInt(editableGrid.getValueAt(i, 0)));
+    }
+
+    return results;
+  }
+
+  function getFreeOrders(allOrders, usedOrders) {
+    var results = $.extend(true, {}, allOrders);
+    for (var i = 0 ; i < usedOrders.length ; i++) {
+      if (results[usedOrders[i]]) {
+        delete results[usedOrders[i]];
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   *
+   * @param editableGrid
+   * @param allOrders
+   * @param notThisId
+   * @returns {*}
+   */
+  function getAdjustedFreeOrders(editableGrid, allOrders, notThisId) {
+    var usedOrders = getAllSelectedValuesWithoutOne(editableGrid, notThisId);
+    var freeOrders = getFreeOrders(allOrders, usedOrders);
+    var adjustedOrders = {}
+    for (var prop in freeOrders) {
+      if (freeOrders.hasOwnProperty(prop)) {
+        adjustedOrders[freeOrders[prop].id] = freeOrders[prop].name;
+      }
+    }
+    return adjustedOrders;
   }
 
   /**
@@ -494,6 +598,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   init();
+  updateAllOrders();
 
   addOrderBtn.addEventListener('click', function() {
     if (editableGrid) {
