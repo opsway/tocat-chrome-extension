@@ -315,7 +315,7 @@ document.addEventListener('DOMContentLoaded', function() {
     metadata.push({name: "budget_left", label: "Budget left", datatype: "integer", editable: false});
     metadata.push({name: "ticket_budget", label: "Ticket budget", datatype: "integer", editable: true});
     metadata.push({name: "paid", label: "Paid", datatype: "boolean", editable: false});
-    metadata.push({name: "action", label: "Actions", editable: false});
+    metadata.push({name: "action", label: "Actions", editable: false, datatype: "html"});
     metadata[0].values = adjustAllOrders(allOrders);
 
     editableGrid = new EditableGrid("GridJsData", {
