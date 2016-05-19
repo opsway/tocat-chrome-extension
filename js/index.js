@@ -256,6 +256,30 @@ document.addEventListener('DOMContentLoaded', function() {
     return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/task/' + taskId + '/budget');
   }
 
+  /**
+   *
+   * @param orderId
+   * @returns {Promise}
+   */
+  function getTicketBudget(orderId, taskId) {
+    return new Promise(function(resolve, reject) {
+      getBudget(taskId).then(function(data) {
+        console.log('budget ', data);
+        console.log('orderId ', orderId);
+        if (data.budget) {
+          for (var i = 0 ; i < data.budget.length ; i++) {
+            if (data.budget[i].order_id == orderId) {
+              resolve(data.budget[i].budget);
+            }
+          }
+          resolve(0);
+        } else {
+          resolve(0);
+        }
+      }, errorCather);
+    });
+  }
+
   function refreshTask() {
     return getCurrentTask().then(function(receivedTask) {
       task = receivedTask;
@@ -361,10 +385,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // order changed
         if (colIdx === 0) {
-          editableGrid.setValueAt(rowIdx, 2, 0);
           getOrder(newValue).then(function(data) {
             editableGrid.setValueAt(rowIdx, 1, data.free_budget);
           });
+          if (!TOCAT_TOOLS.isEmptyObject(task)) {
+            getTicketBudget(newValue, task.id).then(function(data) {
+              editableGrid.setValueAt(rowIdx, 2, parseInt(data, 10));
+            }, errorCather)
+          }
         }
       },
       openedCellEditor: function(rowIndex, columnIndex) {
