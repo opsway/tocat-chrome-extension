@@ -13,7 +13,7 @@ var TOCAT_TOOLS = (function() {
   var counterRequest = 0;
   var counterResponse = 0;
 
-  var urlTocat = 'http://test.tocat.opsway.com';
+  var urlTocat = 'https://tocat.opsway.com';
 
   // show and hide spinner
   function checkCounters() {
