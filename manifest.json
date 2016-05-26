@@ -10,7 +10,7 @@
   },
   "permissions": [
     "storage",
-    "http://test.tocat.opsway.com/*",
+    "https://tocat.opsway.com/*",
     "tabs"
   ],
   "background": {
