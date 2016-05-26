@@ -12,8 +12,9 @@ if (!chrome.runtime) {
 var TOCAT_TOOLS = (function() {
   var counterRequest = 0;
   var counterResponse = 0;
+  var tocatToken = '';
 
-  var urlTocat = 'http://test.tocat.opsway.com';
+  var urlTocat = 'https://tocat.opsway.com';
 
   // show and hide spinner
   function checkCounters() {
@@ -34,6 +35,9 @@ var TOCAT_TOOLS = (function() {
       var xhr = new XMLHttpRequest();
       counterRequest += 1;
       checkCounters();
+      if (tocatToken) {
+        xhr.setRequestHeader('Authorization', tocatToken);
+      }
       xhr.open('get', url, true);
       xhr.responseType = 'json';
       xhr.onload = function() {
@@ -55,6 +59,9 @@ var TOCAT_TOOLS = (function() {
       var xhr = new XMLHttpRequest();
       counterRequest += 1;
       checkCounters();
+      if (tocatToken) {
+        xhr.setRequestHeader('Authorization', tocatToken);
+      }
       xhr.open('delete', url, true);
       xhr.responseType = 'json';
       xhr.onload = function() {
@@ -76,6 +83,9 @@ var TOCAT_TOOLS = (function() {
       var xhr = new XMLHttpRequest();
       counterRequest += 1;
       checkCounters();
+      if (tocatToken) {
+        xhr.setRequestHeader('Authorization', tocatToken);
+      }
       xhr.open('post', url, true);
       xhr.responseType = 'json';
       xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
@@ -147,6 +157,10 @@ var TOCAT_TOOLS = (function() {
     return (S4()+S4()+"-"+S4()+"-"+S4()+"-"+S4()+"-"+S4()+S4()+S4());
   }
 
+  function setTokenHeader(token) {
+    tocatToken = token;
+  }
+
   return {
     getJSON: getJSONRequest,
     postJSON: postJSONRequest,
@@ -154,7 +168,8 @@ var TOCAT_TOOLS = (function() {
     deleteJSON: deleteJSONRequest,
     isEmptyObject: isEmptyObject,
     updateIcon: updateIcon,
-    guidGenerator: guidGenerator
+    guidGenerator: guidGenerator,
+    setTokenHeader: setTokenHeader
   }
 
 })();

@@ -10,13 +10,75 @@ document.addEventListener('DOMContentLoaded', function() {
     // task is global variable. Redo it
     task = null,
     editableGrid = null,
-    globalAllOrders = null;
+    globalAllOrders = null,
+    loginButton = document.getElementById('loginButton'),
+    content = document.getElementById('content');
+
+  function showLoginButton() {
+    loginButton.classList.remove('hide');
+  }
+
+  function hideLoginButton() {
+    loginButton.classList.add('hide');
+  }
+
+  function showContent() {
+    content.classList.remove('hide');
+  }
+
+  function hideContent() {
+    content.classList.add('hide');
+  }
+
+  function hideSpinner() {
+    var spinner = document.getElementById('spinner');
+    spinner.classList.add('hide');
+  }
 
   function updateAllOrders() {
     getAllOrders().then(function(data) {
       globalAllOrders = adjustArrayOfObject(data, 'id')
     }, errorCather);
   }
+
+  /**
+   *
+   * @param queryString
+   * @returns {{}}
+   */
+  function parseQueryString(queryString) {
+    var params = {},
+    regex = /([^&=]+)=([^&]*)/g, m;
+    while (m = regex.exec(queryString)) {
+      params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
+    }
+
+    return params;
+  }
+
+  /*function addIframe(url, successCallback, errorCallback) {
+    var iframe = document.createElement('iframe'),
+      queryParams = parseQueryString(url.split('?')[1]),
+      nonce = queryParams['nonce'];
+
+    iframe.id = 'iframe';
+    iframe.src = url + '&output=embed';
+
+    console.log('url ', iframe.src);
+    document.body.appendChild(iframe);
+    iframe.addEventListener('load', function() {
+      if (url !== window.location.href) {
+        var queryString = location.hash.substring(1),
+          params = parseQueryString(queryString);
+
+        if (params['nonce'] === nonce) {
+          successCallback(params['access_token']);
+        } else {
+          errorCallback();
+        }
+      }
+    });
+  }*/
 
   /**
    *
@@ -88,6 +150,23 @@ document.addEventListener('DOMContentLoaded', function() {
         })
       });
     });
+  }
+
+  /**
+   *
+   * @returns {*}
+   */
+  function getAuthUrl() {
+    return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/authenticate')
+  }
+
+  /**
+   *
+   * @param googleToken
+   * @returns {*}
+   */
+  function getTocatToken(googleToken) {
+    return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/authenticate?code=' + googleToken);
   }
 
   /**
@@ -639,56 +718,100 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  init();
-  updateAllOrders();
+  function renderContent() {
+    init();
+    updateAllOrders();
 
-  addOrderBtn.addEventListener('click', function() {
-    if (editableGrid) {
-      appendEmptyRowToGrid(editableGrid);
-    } else {
-      getAllOrders().then(function(allOrders) {
-        renderTable([], allOrders);
+    addOrderBtn.addEventListener('click', function() {
+      if (editableGrid) {
         appendEmptyRowToGrid(editableGrid);
-      }, errorCather);
-    }
-  });
-
-  selectResolver.addEventListener('change', function() {
-    var selectedResolver = getSelectedResolverHtmlObject();
-    // id of resolver - selectedResolver.value
-    if (!task) {
-      return;
-    }
-
-    if (parseInt(selectedResolver.value, 10)) {
-      addResolver(parseInt(selectedResolver.value, 10));
-    } else {
-      // value 0 means rm resolver
-      rmResolver();
-    }
-  });
-
-  checkboxAccepted.addEventListener('change', function() {
-    if (TOCAT_TOOLS.isEmptyObject(task)) {
-      createNewTask().then(function(data) {
-        if (checkboxAccepted.checked) {
-          setAcceptStatus(data);
-        } else {
-          rmAcceptStatus(data);
-        }
-        showInformation('The new task has been created');
-      }, errorCather);
-    } else {
-      if (checkboxAccepted.checked) {
-        setAcceptStatus(task);
       } else {
-        rmAcceptStatus(task);
+        getAllOrders().then(function(allOrders) {
+          renderTable([], allOrders);
+          appendEmptyRowToGrid(editableGrid);
+        }, errorCather);
       }
+    });
+
+    selectResolver.addEventListener('change', function() {
+      var selectedResolver = getSelectedResolverHtmlObject();
+      // id of resolver - selectedResolver.value
+      if (!task) {
+        return;
+      }
+
+      if (parseInt(selectedResolver.value, 10)) {
+        addResolver(parseInt(selectedResolver.value, 10));
+      } else {
+        // value 0 means rm resolver
+        rmResolver();
+      }
+    });
+
+    checkboxAccepted.addEventListener('change', function() {
+      if (TOCAT_TOOLS.isEmptyObject(task)) {
+        createNewTask().then(function(data) {
+          if (checkboxAccepted.checked) {
+            setAcceptStatus(data);
+          } else {
+            rmAcceptStatus(data);
+          }
+          showInformation('The new task has been created');
+        }, errorCather);
+      } else {
+        if (checkboxAccepted.checked) {
+          setAcceptStatus(task);
+        } else {
+          rmAcceptStatus(task);
+        }
+      }
+    });
+
+    getCurrentUrl().then(function(data) {
+      TOCAT_TOOLS.updateIcon(data);
+    });
+  }
+
+  port.postMessage({
+    name: 'getToken'
+  });
+
+  port.onMessage.addListener(function(msg) {
+    switch (msg.name) {
+      case 'getToken':
+        if (msg.token) {
+          renderContent();
+          showContent();
+        } else {
+          hideSpinner();
+          showLoginButton();
+        }
+      default:
+        break;
     }
   });
 
-  getCurrentUrl().then(function(data) {
-    TOCAT_TOOLS.updateIcon(data);
+  loginButton.addEventListener('click', function() {
+    getAuthUrl().then(function(data) {
+      hideLoginButton();
+
+      // var win = window.open(data.url,'login','height=800,width=800');
+
+      /*chrome.identity.launchWebAuthFlow(
+        {'url': data.url, 'interactive': true},
+        function(redirect_url) {
+          bkg.console.log('redirect_url ', redirect_url);
+        });*/
+
+      chrome.identity.getAuthToken({ }, function(token) {
+        console.log('token ', token);
+      });
+
+    }, errorCather);
   });
+
+  function popupCallback(str){
+    alert("This is callback:" + str);
+  }
 
 });
