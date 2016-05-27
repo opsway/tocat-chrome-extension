@@ -43,45 +43,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
   /**
    *
-   * @param queryString
-   * @returns {{}}
-   */
-  function parseQueryString(queryString) {
-    var params = {},
-    regex = /([^&=]+)=([^&]*)/g, m;
-    while (m = regex.exec(queryString)) {
-      params[decodeURIComponent(m[1])] = decodeURIComponent(m[2]);
-    }
-
-    return params;
-  }
-
-  /*function addIframe(url, successCallback, errorCallback) {
-    var iframe = document.createElement('iframe'),
-      queryParams = parseQueryString(url.split('?')[1]),
-      nonce = queryParams['nonce'];
-
-    iframe.id = 'iframe';
-    iframe.src = url + '&output=embed';
-
-    console.log('url ', iframe.src);
-    document.body.appendChild(iframe);
-    iframe.addEventListener('load', function() {
-      if (url !== window.location.href) {
-        var queryString = location.hash.substring(1),
-          params = parseQueryString(queryString);
-
-        if (params['nonce'] === nonce) {
-          successCallback(params['access_token']);
-        } else {
-          errorCallback();
-        }
-      }
-    });
-  }*/
-
-  /**
-   *
    * @param array
    * @param property
    * @returns {*}
@@ -795,16 +756,15 @@ document.addEventListener('DOMContentLoaded', function() {
     getAuthUrl().then(function(data) {
       hideLoginButton();
 
-      // var win = window.open(data.url,'login','height=800,width=800');
+      chrome.identity.getAuthToken({'interactive': true}, function(googleToken) {
+        var googleToken = googleToken;
 
-      /*chrome.identity.launchWebAuthFlow(
-        {'url': data.url, 'interactive': true},
-        function(redirect_url) {
-          bkg.console.log('redirect_url ', redirect_url);
-        });*/
+        /*chrome.identity.launchWebAuthFlow(
+          {'url': data.url, 'interactive': true},
+          function(redirect_url) {
+            alert(redirect_url);
+          });*/
 
-      chrome.identity.getAuthToken({ }, function(token) {
-        console.log('token ', token);
       });
 
     }, errorCather);
