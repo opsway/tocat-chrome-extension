@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name":"TOCAT",
-  "version":"0.8",
+  "version":"0.2",
   "description":"TOCAT plugin",
   "browser_action": {
     "default_icon": "icon.png",
@@ -11,7 +11,9 @@
   "permissions": [
     "storage",
     "https://tocat.opsway.com/*",
-    "tabs"
+    "https://accounts.google.com/*",
+    "tabs",
+    "identity"
   ],
   "background": {
     "scripts": ["js/background.js", "js/tools.js"],
@@ -22,5 +24,11 @@
     "48": "48.png",
     "128": "128.png"
   },
-  "offline_enabled": false
+  "offline_enabled": false,
+  "oauth2": {
+    "client_id": "158247504949-3grgaccf3iflq6l0dophe4a7kcapnqd7.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/userinfo.email"
+    ]
+  }
 }

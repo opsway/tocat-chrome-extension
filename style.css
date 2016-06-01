@@ -52,3 +52,17 @@ input.invalid {
     height: 80px;
     margin: 0 auto;
 }
+
+.login-button{
+    top: 100px;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 492px;
+    height: 108px;
+    margin: 0 auto;
+}
+
+.login-button:hover {
+    cursor: pointer;
+}
