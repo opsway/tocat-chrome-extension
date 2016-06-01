@@ -41,6 +41,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }, errorCather);
   }
 
+  function addAuthError(errorMessage) {
+    var authError = document.getElementById('auth-error');
+    authError.innerHTML = errorMessage;
+  }
+
   /**
    *
    * @param array
@@ -741,6 +746,7 @@ document.addEventListener('DOMContentLoaded', function() {
     switch (msg.name) {
       case 'getToken':
         if (msg.token) {
+          TOCAT_TOOLS.setTokenHeader(msg.token);
           renderContent();
           showContent();
         } else {
@@ -756,15 +762,25 @@ document.addEventListener('DOMContentLoaded', function() {
     getAuthUrl().then(function(data) {
       hideLoginButton();
 
-      chrome.identity.getAuthToken({'interactive': true}, function(googleToken) {
-        var googleToken = googleToken;
+      chrome.identity.launchWebAuthFlow(
+        {'url': data.url, 'interactive': true},
+        function(redirect_url) {
+          // todo: check redirect_url
+          var message = redirect_url.split('#')[1];
+          var authToken = message.split('=')[1];
+          if (message !== 'error') {
+            port.postMessage({
+              name: 'setToken',
+              token: authToken
+            });
+            // show data
+            renderContent();
+            showContent();
 
-        /*chrome.identity.launchWebAuthFlow(
-          {'url': data.url, 'interactive': true},
-          function(redirect_url) {
-            alert(redirect_url);
-          });*/
-
+          } else {
+            // maybe show popup?
+            addAuthError('Not authorized');
+          }
       });
 
     }, errorCather);

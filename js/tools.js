@@ -35,10 +35,10 @@ var TOCAT_TOOLS = (function() {
       var xhr = new XMLHttpRequest();
       counterRequest += 1;
       checkCounters();
+      xhr.open('get', url, true);
       if (tocatToken) {
         xhr.setRequestHeader('Authorization', tocatToken);
       }
-      xhr.open('get', url, true);
       xhr.responseType = 'json';
       xhr.onload = function() {
         var status = xhr.status;
@@ -59,10 +59,10 @@ var TOCAT_TOOLS = (function() {
       var xhr = new XMLHttpRequest();
       counterRequest += 1;
       checkCounters();
+      xhr.open('delete', url, true);
       if (tocatToken) {
         xhr.setRequestHeader('Authorization', tocatToken);
       }
-      xhr.open('delete', url, true);
       xhr.responseType = 'json';
       xhr.onload = function() {
         var status = xhr.status;
@@ -83,10 +83,10 @@ var TOCAT_TOOLS = (function() {
       var xhr = new XMLHttpRequest();
       counterRequest += 1;
       checkCounters();
+      xhr.open('post', url, true);
       if (tocatToken) {
         xhr.setRequestHeader('Authorization', tocatToken);
       }
-      xhr.open('post', url, true);
       xhr.responseType = 'json';
       xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
       xhr.onload = function() {
