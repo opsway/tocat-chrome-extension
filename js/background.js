@@ -33,14 +33,12 @@ chrome.extension.onConnect.addListener(function(port) {
 
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
   var url = tab.url;
-  // todo: check token
   if (url && changeInfo.status == 'complete') {
     TOCAT_TOOLS.updateIcon(url.split('?')[0]);
   }
 });
 
 chrome.tabs.onActivated.addListener(function() {
-  // todo: check token
   chrome.tabs.query({'active': true, 'lastFocusedWindow': true}, function (tabs) {
     TOCAT_TOOLS.updateIcon(tabs[0].url.split('?')[0]);
   });

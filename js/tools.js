@@ -13,6 +13,7 @@ var TOCAT_TOOLS = (function() {
   var counterRequest = 0;
   var counterResponse = 0;
   var tocatToken = '';
+  var port = chrome.extension.connect({name: "connection with background"});
 
   var urlTocat = 'https://tocat.opsway.com';
 
@@ -36,8 +37,8 @@ var TOCAT_TOOLS = (function() {
       counterRequest += 1;
       checkCounters();
       xhr.open('get', url, true);
-      if (tocatToken) {
-        xhr.setRequestHeader('Authorization', tocatToken);
+      if (localStorage.tocatToken) {
+        xhr.setRequestHeader('Authorization', localStorage.tocatToken);
       }
       xhr.responseType = 'json';
       xhr.onload = function() {
