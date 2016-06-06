@@ -700,6 +700,27 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  function revokeToken() {
+    chrome.identity.getAuthToken({ 'interactive': false },
+      function(current_token) {
+        if (!chrome.runtime.lastError) {
+
+          // @corecode_begin removeAndRevokeAuthToken
+          // @corecode_begin removeCachedAuthToken
+          // Remove the local cached token
+          chrome.identity.removeCachedAuthToken({ token: current_token },
+            function() {});
+          // @corecode_end removeCachedAuthToken
+
+          // Make a request to revoke token in the server
+          var xhr = new XMLHttpRequest();
+          xhr.open('GET', 'https://accounts.google.com/o/oauth2/revoke?token=' +
+            current_token);
+          xhr.send();
+        }
+      });
+  }
+
   function renderContent() {
     init();
     updateAllOrders();
@@ -790,29 +811,32 @@ document.addEventListener('DOMContentLoaded', function() {
         {'url': data.url, 'interactive': true},
         function(redirect_url) {
           // todo: check redirect_url
-          if (redirect_url) {
-            var message = redirect_url.split('#')[1];
-            var authToken = message.split('=')[1];
-            if (message !== 'error') {
+          if (!chrome.runtime.lastError) {
+            if (redirect_url) {
+              var message = redirect_url.split('#')[1];
+              var authToken = message.split('=')[1];
+
               port.postMessage({
                 name: 'setToken',
                 token: authToken
               });
-              // show data
-              renderContent();
-              showContent();
+
+              port.postMessage({
+                name: 'getToken'
+              });
 
             } else {
-              // maybe show popup?
-              addAuthError('Not authorized');
+              addAuthError('Authorization failed');
+              chrome.identity.launchWebAuthFlow(
+                { 'url': 'https://accounts.google.com/logout' },
+                function() {}
+              );
             }
           } else {
             addAuthError('Authorization failed');
             chrome.identity.launchWebAuthFlow(
               { 'url': 'https://accounts.google.com/logout' },
-              function(tokenUrl) {
-                // alert(tokenUrl)
-              }
+              function() {}
             );
           }
       });
