@@ -461,29 +461,31 @@ document.addEventListener('DOMContentLoaded', function() {
       cell.innerHTML = '<span class="pointer" id="' + guidId + '"><img src="delete.png" border="0" alt="delete" title="delete"/></span>';
       var deleteButton = document.getElementById(guidId);
       deleteButton.addEventListener('click', function() {
-        if (confirm('Are you sure you want to remove order?')) {
-          var orderId = editableGrid.getValueAt(cell.rowIndex, 0);
-          // Select means empty order
-          if (orderId !== 'Select') {
-            rmOrder(parseInt(orderId, 10), task).then(function() {
+        bootbox.confirm('Are you sure you want to remove order?', function(result) {
+          if (result) {
+            var orderId = editableGrid.getValueAt(cell.rowIndex, 0);
+            // Select means empty order
+            if (orderId !== 'Select') {
+              rmOrder(parseInt(orderId, 10), task).then(function() {
+                editableGrid.remove(cell.rowIndex);
+                if (!editableGrid.getTotalRowCount()) {
+                  hideTable();
+                }
+                refreshTask();
+                getCurrentUrl().then(function(data) {
+                  TOCAT_TOOLS.updateIcon(data);
+                }, errorCather);
+              }, function(err) {
+                showErrors(err.errors);
+              });
+            } else {
               editableGrid.remove(cell.rowIndex);
               if (!editableGrid.getTotalRowCount()) {
                 hideTable();
               }
-              refreshTask();
-              getCurrentUrl().then(function(data) {
-                TOCAT_TOOLS.updateIcon(data);
-              }, errorCather);
-            }, function(err) {
-              showErrors(err.errors);
-            });
-          } else {
-            editableGrid.remove(cell.rowIndex);
-            if (!editableGrid.getTotalRowCount()) {
-              hideTable();
             }
           }
-        }
+        });
       });
 
     }}));
