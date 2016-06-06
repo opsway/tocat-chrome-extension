@@ -204,6 +204,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
   /**
    *
+   * @returns {*}
+   */
+  function getAllDevelopers() {
+    return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users?search=role%20!=%20Manager');
+  }
+
+  /**
+   *
    * @param orderId
    * @returns {*}
    */
@@ -678,8 +686,12 @@ document.addEventListener('DOMContentLoaded', function() {
             });
           } else {
             // todo: rm it from here
-            rebuildSelect([]);
-            resolve({});
+            getAllDevelopers().then(function(data) {
+              rebuildSelect(data);
+              resolve({});
+            }, function(err) {
+              reject(err);
+            });
           }
         }, function(err) {
           reject(err);
@@ -706,8 +718,16 @@ document.addEventListener('DOMContentLoaded', function() {
     selectResolver.addEventListener('change', function() {
       var selectedResolver = getSelectedResolverHtmlObject();
       // id of resolver - selectedResolver.value
-      if (!task) {
-        return;
+      if (!task || TOCAT_TOOLS.isEmptyObject(task)) {
+        createNewTask().then(function(data) {
+          task = data;
+          if (parseInt(selectedResolver.value, 10)) {
+            addResolver(parseInt(selectedResolver.value, 10));
+          }
+          showInformation('The new task has been created');
+          // maybe rm it from here
+          chrome.browserAction.setBadgeText({text: '0'});
+        }, errorCather);
       }
 
       if (parseInt(selectedResolver.value, 10)) {
