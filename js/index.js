@@ -75,7 +75,9 @@ document.addEventListener('DOMContentLoaded', function() {
    * @param data
    */
   function errorCather(data) {
-    alert(JSON.stringify(data));
+    bootbox.alert(JSON.stringify(data), function() {
+
+    });
   }
 
   function hideTable() {
