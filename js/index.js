@@ -790,20 +790,30 @@ document.addEventListener('DOMContentLoaded', function() {
         {'url': data.url, 'interactive': true},
         function(redirect_url) {
           // todo: check redirect_url
-          var message = redirect_url.split('#')[1];
-          var authToken = message.split('=')[1];
-          if (message !== 'error') {
-            port.postMessage({
-              name: 'setToken',
-              token: authToken
-            });
-            // show data
-            renderContent();
-            showContent();
+          if (redirect_url) {
+            var message = redirect_url.split('#')[1];
+            var authToken = message.split('=')[1];
+            if (message !== 'error') {
+              port.postMessage({
+                name: 'setToken',
+                token: authToken
+              });
+              // show data
+              renderContent();
+              showContent();
 
+            } else {
+              // maybe show popup?
+              addAuthError('Not authorized');
+            }
           } else {
-            // maybe show popup?
-            addAuthError('Not authorized');
+            addAuthError('Authorization failed');
+            chrome.identity.launchWebAuthFlow(
+              { 'url': 'https://accounts.google.com/logout' },
+              function(tokenUrl) {
+                // alert(tokenUrl)
+              }
+            );
           }
       });
 
