@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
     task = null,
     editableGrid = null,
     globalAllOrders = null,
+    globalPotentialOrders = null,
     loginButton = document.getElementById('loginButton'),
     content = document.getElementById('content');
 
@@ -106,6 +107,56 @@ document.addEventListener('DOMContentLoaded', function() {
     return selectResolver.options[selectResolver.selectedIndex];
   }
 
+  /**
+   *
+   * @param userId
+   * @returns {Promise}
+   */
+  function getPotentialOrders(userId) {
+    if (!parseInt(userId, 10)) {
+      return Promise.resolve([]);
+    }
+
+    if (!userId) {
+      console.error({message: 'empty userId'});
+      return Promise.reject();
+    }
+
+    return new Promise(function(resolve, reject) {
+      TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/user/' + userId).then(function(data) {
+        TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/orders?search=team==' + data.tocat_team.name + ' completed != 1')
+          .then(function (data){
+            resolve(data);
+          }, errorCather);
+      }, function(err) {
+        reject(err);
+      });
+    });
+  }
+
+  /**
+   *
+   * @param orderId
+   * @returns {Promise}
+   */
+  function getPotentialResolvers(orderId) {
+    if (!orderId) {
+      console.error({message: 'empty orderId'});
+      return Promise.reject();
+    }
+
+    return new Promise(function(resolve, reject) {
+      TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/order/' + orderId).then(function(order) {
+        TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users?search=role=Developer team=' + order.team.name)
+          .then(function (data){
+            resolve(data);
+          }, errorCather);
+      }, function(err) {
+        reject(err);
+      })
+    });
+  }
+
   function createNewTask() {
     return new Promise(function(resolve, reject) {
       getCurrentUrl().then(function(data) {
@@ -199,7 +250,7 @@ document.addEventListener('DOMContentLoaded', function() {
    * @returns {*}
    */
   function getAllOrders() {
-    return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/orders');
+    return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/orders?search=completed != 1');
   }
 
   /**
@@ -440,6 +491,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // order changed
         if (colIdx === 0) {
+          getPotentialResolvers(newValue).then(function(resolvers) {
+            rebuildSelect(resolvers, true);
+          });
+
           getOrder(newValue).then(function(data) {
             editableGrid.setValueAt(rowIdx, 1, data.free_budget);
           });
@@ -456,9 +511,33 @@ document.addEventListener('DOMContentLoaded', function() {
           editableGrid.setEnumProvider("order", new EnumProvider({
             getOptionValuesForEdit: function (grid, column, rowIndex) {
               var selectedValues = editableGrid.getValueAt(rowIndex, columnIndex);
-              var options = getAdjustedFreeOrders(editableGrid, globalAllOrders, selectedValues);
-              console.log('options ', options);
+              var options = null;
+              if (globalPotentialOrders) {
+                options = getAdjustedFreeOrders(editableGrid, globalPotentialOrders, selectedValues);
+              } else {
+                options = getAdjustedFreeOrders(editableGrid, globalAllOrders, selectedValues);
+              }
+              console.log('edit options ', options);
               return options;
+            },
+            getOptionValuesForRender: function(grid, column, rowIndex) {
+              var adjustedOrders = {};
+
+              if (globalPotentialOrders) {
+                for (var prop in globalPotentialOrders) {
+                  if (globalPotentialOrders.hasOwnProperty(prop)) {
+                    adjustedOrders[globalPotentialOrders[prop].id] = globalPotentialOrders[prop].name;
+                  }
+                }
+              } else {
+                for (var prop in globalAllOrders) {
+                  if (globalAllOrders.hasOwnProperty(prop)) {
+                    adjustedOrders[globalAllOrders[prop].id] = globalAllOrders[prop].name;
+                  }
+                }
+              }
+
+              return adjustedOrders;
             }
           }));
         }
@@ -532,7 +611,6 @@ document.addEventListener('DOMContentLoaded', function() {
       results.push(parseInt(editableGrid.getValueAt(i, 0)));
     }
 
-    console.log('results ', results);
     return results;
   }
 
@@ -556,9 +634,9 @@ document.addEventListener('DOMContentLoaded', function() {
    */
   function getAdjustedFreeOrders(editableGrid, allOrders, notThisId) {
     var usedOrders = getAllSelectedValuesWithoutOne(editableGrid, notThisId);
-    console.log('usedOrders ', usedOrders);
+    console.log('all selected values without one', usedOrders);
     var freeOrders = getFreeOrders(allOrders, usedOrders);
-    console.log('freeOrders ', freeOrders);
+    console.log('all free values', freeOrders);
     var adjustedOrders = {}
     for (var prop in freeOrders) {
       if (freeOrders.hasOwnProperty(prop)) {
@@ -616,13 +694,19 @@ document.addEventListener('DOMContentLoaded', function() {
    * change select box with resolvers according to users
    * @param users
    */
-  function rebuildSelect(users) {
+  function rebuildSelect(users, flagSelected) {
     var selectResolver = document.getElementById('selectResolver');
+    var oldValue = selectResolver.value;
+
     selectResolver.options.length = 0;
 
     selectResolver.options.add(new Option('select', 0));
     for (var i = 0; i < users.length ; i++) {
         selectResolver.options.add(new Option(users[i].name, users[i].id));
+    }
+
+    if (flagSelected) {
+      selectResolver.value = oldValue;
     }
   }
 
@@ -700,39 +784,38 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  function revokeToken() {
-    chrome.identity.getAuthToken({ 'interactive': false },
-      function(current_token) {
-        if (!chrome.runtime.lastError) {
-
-          // @corecode_begin removeAndRevokeAuthToken
-          // @corecode_begin removeCachedAuthToken
-          // Remove the local cached token
-          chrome.identity.removeCachedAuthToken({ token: current_token },
-            function() {});
-          // @corecode_end removeCachedAuthToken
-
-          // Make a request to revoke token in the server
-          var xhr = new XMLHttpRequest();
-          xhr.open('GET', 'https://accounts.google.com/o/oauth2/revoke?token=' +
-            current_token);
-          xhr.send();
-        }
-      });
-  }
-
   function renderContent() {
     init();
     updateAllOrders();
 
     addOrderBtn.addEventListener('click', function() {
       if (editableGrid) {
+        var numberRows = editableGrid.getRowCount();
+          for (var i = 0 ; i < numberRows ; i++) {
+            if (editableGrid.getValueAt(i, 0) !== 'Select') {
+              getOrder(editableGrid.getValueAt(i, 0)).then(function(order) {
+                TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/orders?search=team==' + order.team.name + ' completed != 1')
+                  .then(function (data){
+                    globalPotentialOrders = adjustArrayOfObject(data, 'id');
+                  }, errorCather);
+              }, errorCather);
+            }
+          }
         appendEmptyRowToGrid(editableGrid);
       } else {
-        getAllOrders().then(function(allOrders) {
-          renderTable([], allOrders);
-          appendEmptyRowToGrid(editableGrid);
-        }, errorCather);
+        if (selectResolver.value == 0) {
+          getAllOrders().then(function(allOrders) {
+            globalPotentialOrders = adjustArrayOfObject(allOrders, 'id');
+            renderTable([], allOrders);
+            appendEmptyRowToGrid(editableGrid);
+          }, errorCather);
+        } else {
+          getPotentialOrders(selectResolver.value).then(function(data) {
+            globalPotentialOrders = adjustArrayOfObject(data, 'id');
+            renderTable([], data);
+            appendEmptyRowToGrid(editableGrid);
+          }, errorCather)
+        }
       }
     });
 
@@ -753,9 +836,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
       if (parseInt(selectedResolver.value, 10)) {
         addResolver(parseInt(selectedResolver.value, 10));
+        getPotentialOrders(selectedResolver.value).then(function(data) {
+          globalPotentialOrders = adjustArrayOfObject(data, 'id');
+        }, errorCather);
       } else {
         // value 0 means rm resolver
         rmResolver();
+        globalPotentialOrders = null;
+        console.log('globalPotentialOrders ', globalPotentialOrders);
       }
     });
 
@@ -843,9 +931,5 @@ document.addEventListener('DOMContentLoaded', function() {
 
     }, errorCather);
   });
-
-  function popupCallback(str){
-    alert("This is callback:" + str);
-  }
 
 });
