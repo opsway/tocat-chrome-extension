@@ -139,10 +139,12 @@ var TOCAT_TOOLS = (function() {
         return;
       }
 
-      if (totalBudget && totalBudget <= 9000) {
+      if (totalBudget && totalBudget <= 9999) {
         chrome.browserAction.setBadgeText({text: totalBudget.toString()});
+        chrome.browserAction.setBadgeBackgroundColor({color: '#1d9c19'});
       } else {
         chrome.browserAction.setBadgeText({text: '—'});
+        chrome.browserAction.setBadgeBackgroundColor({color: '#991e17'});
       }
     });
   }
