@@ -20,6 +20,7 @@ chrome.extension.onConnect.addListener(function(port) {
       case 'getToken':
         if (isTokenExpired()) {
           localStorage.tokenUpdatedAt = '';
+          localStorage.tocatToken = '';
         }
         port.postMessage({
           name: 'getToken',
