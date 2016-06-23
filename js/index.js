@@ -49,6 +49,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
   /**
    *
+   * @param text
+   */
+  function showOrderText(text) {
+    var orderText = document.getElementById('orders-text');
+    orderText.innerHTML = text;
+  }
+
+  /**
+   *
    * @param array
    * @param property
    * @returns {*}
@@ -93,8 +102,9 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function showInformation(message) {
-    var placeForError = document.getElementById('error-message-block');
-    placeForError.innerHTML = message;
+    var documentBox = $('#save-message');
+    documentBox.show();
+    setTimeout(function(){ documentBox.fadeOut('slow') }, 1600);
   }
 
   /**
@@ -547,7 +557,7 @@ document.addEventListener('DOMContentLoaded', function() {
     editableGrid.setCellRenderer('action', new CellRenderer({render: function(cell, value) {
       var guidId = TOCAT_TOOLS.guidGenerator();
 
-      cell.innerHTML = '<span class="pointer" id="' + guidId + '"><img src="delete.png" border="0" alt="delete" title="delete"/></span>';
+      cell.innerHTML = '<span class="pointer" id="' + guidId + '"><button type="button" class="btn btn-sm btn-danger"><em class="fa fa-trash"></em></button></span>';
       var deleteButton = document.getElementById(guidId);
       deleteButton.addEventListener('click', function() {
         bootbox.confirm('Are you sure you want to remove order?', function(result) {
@@ -559,6 +569,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 editableGrid.remove(cell.rowIndex);
                 if (!editableGrid.getTotalRowCount()) {
                   hideTable();
+                  showOrderText('No orders yet, please add one');
                 }
                 refreshTask();
                 getCurrentUrl().then(function(data) {
@@ -571,6 +582,7 @@ document.addEventListener('DOMContentLoaded', function() {
               editableGrid.remove(cell.rowIndex);
               if (!editableGrid.getTotalRowCount()) {
                 hideTable();
+                showOrderText('No orders yet, please add one');
               }
             }
           }
@@ -657,6 +669,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (taskOrders.length) {
       var data = adjustTaskOrders(taskOrders, budget);
       renderTable(data, allOrders);
+    } else {
+      showOrderText('No orders yet, please add one');
     }
   }
 
@@ -776,6 +790,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }, function(err) {
               reject(err);
             });
+            // show text before orders
+            showOrderText('No orders yet, please add one');
           }
         }, function(err) {
           reject(err);
@@ -791,6 +807,11 @@ document.addEventListener('DOMContentLoaded', function() {
     addOrderBtn.addEventListener('click', function() {
       if (editableGrid) {
         var numberRows = editableGrid.getRowCount();
+          if (!numberRows) {
+            // hide additional text
+            showOrderText('');
+          }
+
           for (var i = 0 ; i < numberRows ; i++) {
             if (editableGrid.getValueAt(i, 0) !== 'Select') {
               getOrder(editableGrid.getValueAt(i, 0)).then(function(order) {
@@ -803,6 +824,9 @@ document.addEventListener('DOMContentLoaded', function() {
           }
         appendEmptyRowToGrid(editableGrid);
       } else {
+        // hide additional text
+        showOrderText('');
+
         if (selectResolver.value == 0) {
           getAllOrders().then(function(allOrders) {
             globalPotentialOrders = adjustArrayOfObject(allOrders, 'id');
@@ -863,6 +887,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
           rmAcceptStatus(task);
         }
+        showInformation('The new task has been created');
       }
     });
 

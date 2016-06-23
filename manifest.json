@@ -12,6 +12,7 @@
     "storage",
     "https://tocat.opsway.com/*",
     "https://accounts.google.com/*",
+    "http://fonts.googleapis.com/*",
     "tabs",
     "identity"
   ],
