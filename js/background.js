@@ -1,5 +1,5 @@
 bkg = chrome.extension.getBackgroundPage();
-localStorage.tocatToken = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2VtYWlsIjoib2xwb2xAb3Bzd2F5LmNvbSIsImV4cCI6MTQ2Njc3MjQxM30.ZCLGVb3LWgBYUn0_KHF3K0HuU4ucdlaEMy6mrW1udWM';
+localStorage.tocatToken = '';
 localStorage.tokenUpdatedAt = '';
 
 /**
