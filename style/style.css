@@ -111,3 +111,8 @@ select {
 html {
     height: 0px;
 }
+
+.icon-pencil-format {
+    float: right;
+    font-size: 1.2em;
+}

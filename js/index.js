@@ -103,6 +103,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function showInformation(message) {
+    console.log('showInformation message', message);
     var documentBox = $('#save-message');
     documentBox.show();
     setTimeout(function(){ documentBox.fadeOut('slow') }, 1600);
@@ -593,6 +594,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
       });
 
+    }}));
+
+    editableGrid.setCellRenderer('paid', new CellRenderer({render: function(cell, value) {
+      var text = value ? 'Yes' : 'No';
+      cell.innerHTML = text;
+    }}));
+
+    editableGrid.setCellRenderer('ticket_budget', new CellRenderer({render: function(cell, value) {
+      cell.innerHTML = value + '<em class="icon-pencil icon-pencil-format"></em>';
     }}));
 
     editableGrid.renderGrid("tablecontent", "ordersGrid");
