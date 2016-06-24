@@ -95,9 +95,10 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function showErrors(errors) {
-    var placeForError = document.getElementById('error-message-block');
     if (errors && errors.length) {
-      placeForError.innerHTML = errors.join('\n');
+      bootbox.alert(JSON.stringify(errors.join('\n')), function() {
+
+      });
     }
   }
 
