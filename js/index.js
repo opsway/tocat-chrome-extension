@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function rmResolver() {
-    TOCAT_TOOLS.deleteJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/resolver');
+    return TOCAT_TOOLS.deleteJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/resolver');
   }
 
   /**
@@ -901,13 +901,17 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       if (parseInt(selectedResolver.value, 10)) {
-        addResolver(parseInt(selectedResolver.value, 10));
+        addResolver(parseInt(selectedResolver.value, 10)).then(function() {
+          showInformation('set other resolver for task');
+        }, errorCather);
         getPotentialOrders(selectedResolver.value).then(function(data) {
           globalPotentialOrders = adjustArrayOfObject(data, 'id');
         }, errorCather);
       } else {
         // value 0 means rm resolver
-        rmResolver();
+        rmResolver().then(function() {
+          showInformation('rm resolver');
+        }, errorCather);
         globalPotentialOrders = null;
         console.log('globalPotentialOrders ', globalPotentialOrders);
       }
