@@ -605,6 +605,20 @@ document.addEventListener('DOMContentLoaded', function() {
       cell.innerHTML = value + '<em class="icon-pencil icon-pencil-format"></em>';
     }}));
 
+    editableGrid.setCellRenderer('order', new CellRenderer({render: function(cell, value) {
+      if (value === 'Select') {
+        cell.innerHTML = value+ '<em class="icon-pencil icon-pencil-format mr-5"></em>';
+      }
+
+      if (TOCAT_TOOLS.isEmptyObject(globalPotentialOrders) && globalAllOrders[value]) {
+        cell.innerHTML = globalAllOrders[value].name + '<em class="icon-pencil icon-pencil-format mr-5"></em>';
+      }
+
+      if (!TOCAT_TOOLS.isEmptyObject(globalPotentialOrders) && globalPotentialOrders[value]) {
+        cell.innerHTML = globalPotentialOrders[value].name + '<em class="icon-pencil icon-pencil-format mr-5"></em>';
+      }
+    }}));
+
     editableGrid.renderGrid("tablecontent", "ordersGrid");
     // ugly solution
     var orders = document.getElementsByClassName('editablegrid-order');

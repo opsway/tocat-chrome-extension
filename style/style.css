@@ -89,6 +89,10 @@ input.invalid {
     width: 400px;
 }
 
+.mr-5 {
+    margin-right: 5px;
+}
+
 select {
     display: block;
     width: 100%;
