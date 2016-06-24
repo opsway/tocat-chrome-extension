@@ -527,7 +527,8 @@ document.addEventListener('DOMContentLoaded', function() {
               } else {
                 options = getAdjustedFreeOrders(editableGrid, globalAllOrders, selectedValues);
               }
-              console.log('edit options ', options);
+
+              console.log('edit options in getOptionValuesForEdit', options);
               return options;
             },
             getOptionValuesForRender: function(grid, column, rowIndex) {
@@ -547,6 +548,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
               }
 
+              console.log('adjustedOrders in getOptionValuesFor render', adjustedOrders);
               return adjustedOrders;
             }
           }));
@@ -734,6 +736,9 @@ document.addEventListener('DOMContentLoaded', function() {
     setAcceptedStatusOfTask(task.accepted)
     if (task.resolver && task.resolver.id) {
       setResolverOfTask(task.resolver.id);
+      getPotentialOrders(task.resolver.id).then(function(data) {
+        globalPotentialOrders = adjustArrayOfObject(data, 'id');
+      })
     }
   }
 
@@ -776,6 +781,7 @@ document.addEventListener('DOMContentLoaded', function() {
     return new Promise(function(resolve, reject) {
       getCurrentUrl().then(function(data) {
         TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/tasks/?search=external_id=' + data).then(function(data) {
+          console.log('Current task ', data);
           if (data.length) {
             // todo: rm it from here
             rebuildSelect(data[0].potential_resolvers);
