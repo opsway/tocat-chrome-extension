@@ -534,6 +534,7 @@ document.addEventListener('DOMContentLoaded', function() {
             getOptionValuesForRender: function(grid, column, rowIndex) {
               var adjustedOrders = {};
 
+              console.log('globalPotentialOrders in getOptionValuesForRender', globalPotentialOrders);
               if (globalPotentialOrders) {
                 for (var prop in globalPotentialOrders) {
                   if (globalPotentialOrders.hasOwnProperty(prop)) {
@@ -548,7 +549,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
               }
 
-              console.log('adjustedOrders in getOptionValuesFor render', adjustedOrders);
+              console.log('adjustedOrders in getOptionValuesForRender', adjustedOrders);
               return adjustedOrders;
             }
           }));
@@ -736,9 +737,6 @@ document.addEventListener('DOMContentLoaded', function() {
     setAcceptedStatusOfTask(task.accepted)
     if (task.resolver && task.resolver.id) {
       setResolverOfTask(task.resolver.id);
-      getPotentialOrders(task.resolver.id).then(function(data) {
-        globalPotentialOrders = adjustArrayOfObject(data, 'id');
-      })
     }
   }
 
@@ -748,9 +746,22 @@ document.addEventListener('DOMContentLoaded', function() {
       task = receivedTask;
       if (!TOCAT_TOOLS.isEmptyObject(receivedTask)) {
         fillInformationAboutTask(task);
-        Promise.all([getAllOrders(), getBudget(task.id)]).then(function(data) {
-          initTable(data[0], task.orders, data[1].budget);
-        }, errorCather);
+
+        // todo: redo it
+        // fix on fix
+        if (task && task.resolver && task.resolver.id) {
+          getPotentialOrders(task.resolver.id).then(function(data) {
+            globalPotentialOrders = adjustArrayOfObject(data, 'id');
+            Promise.all([getAllOrders(), getBudget(task.id)]).then(function(data) {
+              initTable(data[0], task.orders, data[1].budget);
+            }, errorCather);
+          })
+        } else {
+          Promise.all([getAllOrders(), getBudget(task.id)]).then(function(data) {
+            initTable(data[0], task.orders, data[1].budget);
+          }, errorCather);
+        }
+
       } else {
         // task with external_id does not exist
       }
