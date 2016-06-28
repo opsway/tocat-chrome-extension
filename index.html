@@ -3,25 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Test title</title>
-    <link rel="stylesheet" href="style/bootstrap.css">
-    <link rel="stylesheet" href="style/app.css">
-    <link rel="stylesheet" href="style/font-awesome.css">
-    <link rel="stylesheet" href="style/spinkit.css">
-    <link rel="stylesheet" href="style/style.css">
-    <link rel="stylesheet" href="style/simple-line-icons.css">
-    <link rel="stylesheet" href="js/editableGrid/editablegrid.css">
 
-    <script src="js/jquery/jquery-1.12.4.js"></script>
-    <script src="js/bootstrap.js"></script>
-    <script src="js/editableGrid/editablegrid.js"></script>
-    <script src="js/editableGrid/editablegrid_charts.js"></script>
-    <script src="js/editableGrid/editablegrid_editors.js"></script>
-    <script src="js/editableGrid/editablegrid_renderers.js"></script>
-    <script src="js/editableGrid/editablegrid_utils.js"></script>
-    <script src="js/editableGrid/editablegrid_validators.js"></script>
-    <script src="js/bootbox.js"></script>
-    <script src="js/tools.js"></script>
-    <script src="js/index.js"></script>
+    <link rel="stylesheet" href="build/assets.css">
+    <script src="build/assets.js"></script>
 </head>
 <body>
     <div class="container hide" id="content">
@@ -57,19 +41,31 @@
             </div>
             <div class="row">
                 <div class="col-sm-2 col-md-2 col-xs-2">
-                    <div class="checkbox c-checkbox">
+                    <div class="checkbox c-checkbox mtb-0">
                         <label>
-                            <input type="checkbox" id="checkbox-paid"  value="" disabled>
-                            <span class="fa fa-check"></span><strong>Paid</strong>
+                            <input type="checkbox" id="checkbox-expense" value="">
+                            <span class="fa fa-check"></span><strong>Expense</strong>
                         </label>
                     </div>
-
                 </div>
-                <div class="col-md-10 col-sm-10 col-xs-10 mtb-10">
+                <div class="col-md-10 col-sm-10 col-xs-10">
                     <div class="form-group">
                         <label class="control-label col-xs-2 text-right">Budget: </label>
                         <div class="col-xs-9">
                             <span id="budget">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mtb-10">
+                <div class="col-sm-2 col-md-2 col-xs-2">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-xs-6">
+                                <strong>Paid:</strong>
+                            </div>
+                            <div id="text-paid" class="col-xs-6">
+                            </div>
                         </div>
                     </div>
                 </div>

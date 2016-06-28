@@ -1,0 +1,24 @@
+{
+  "name": "tocat-chrome-extension",
+  "version": "1.0.0",
+  "description": "",
+  "dependencies": {},
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-concat": "^2.6.0",
+    "gulp-concat-css": "^2.3.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/opsway/tocat-chrome-extension.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/opsway/tocat-chrome-extension/issues"
+  },
+  "homepage": "https://github.com/opsway/tocat-chrome-extension#readme"
+}
