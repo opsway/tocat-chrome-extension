@@ -27,10 +27,6 @@ document.addEventListener('DOMContentLoaded', function() {
     content.classList.remove('hide');
   }
 
-  function hideContent() {
-    content.classList.add('hide');
-  }
-
   function hideSpinner() {
     var spinner = document.getElementById('spinner');
     spinner.classList.add('hide');
@@ -983,7 +979,6 @@ document.addEventListener('DOMContentLoaded', function() {
       chrome.identity.launchWebAuthFlow(
         {'url': data.url, 'interactive': true},
         function(redirect_url) {
-          // todo: check redirect_url
           if (!chrome.runtime.lastError) {
             if (redirect_url) {
               var message = redirect_url.split('#')[1];
