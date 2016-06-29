@@ -1,12 +1,9 @@
 document.addEventListener('DOMContentLoaded', function() {
   var addOrderBtn = document.getElementById('add-order-btn'),
-    createNewOrder = document.getElementById('create-new-order-btn'),
     selectResolver = document.getElementById('selectResolver'),
     checkboxAccepted = document.getElementById('checkbox-accepted'),
     users = [],
-    bkg = chrome.extension.getBackgroundPage(),
     port = chrome.extension.connect({name: "connection with background"}),
-    url = null,
     // task is global variable. Redo it
     task = null,
     editableGrid = null,
