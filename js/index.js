@@ -43,8 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function addAuthError(errorMessage) {
-    var authError = document.getElementById('auth-error');
-    authError.innerHTML = errorMessage;
+    errorCather(errorMessage);
   }
 
   /**
@@ -228,13 +227,18 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function setPaidStatusOfTask(value) {
-    var checkboxPaid = document.getElementById('checkbox-paid');
-    checkboxPaid.checked = value;
+    var textPaid = document.getElementById('text-paid');
+    textPaid.innerHTML = value ? 'Yes' : 'No';
   }
 
   function setAcceptedStatusOfTask(value) {
     var checkboxAccepted = document.getElementById('checkbox-accepted');
     checkboxAccepted.checked = value;
+  }
+
+  function setExpenseStatusOfTask(value) {
+    var checkboxExpense = document.getElementById('checkbox-expense');
+    checkboxExpense.checked = value;
   }
 
   function setResolverOfTask(value) {
@@ -255,6 +259,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function rmResolver() {
     return TOCAT_TOOLS.deleteJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/resolver');
+  }
+
+  function setExpensesStatus() {
+    return TOCAT_TOOLS.postJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/expenses')
+  }
+
+  function rmExpensesStatus() {
+    return TOCAT_TOOLS.deleteJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/expenses');
   }
 
   /**
@@ -759,7 +771,8 @@ document.addEventListener('DOMContentLoaded', function() {
   function fillInformationAboutTask(task) {
     setBudgetOfTask(task.budget);
     setPaidStatusOfTask(task.paid);
-    setAcceptedStatusOfTask(task.accepted)
+    setAcceptedStatusOfTask(task.accepted);
+    setExpenseStatusOfTask(task.expenses);
     if (task.resolver && task.resolver.id) {
       setResolverOfTask(task.resolver.id);
     }
@@ -817,17 +830,18 @@ document.addEventListener('DOMContentLoaded', function() {
     return new Promise(function(resolve, reject) {
       getCurrentUrl().then(function(data) {
         TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/tasks/?search=external_id=' + data).then(function(data) {
-          console.log('Current task ', data);
           if (data.length) {
             // todo: rm it from here
             rebuildSelect(data[0].potential_resolvers);
             TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/task/' + data[0].id).then(function(receivedTask) {
+              console.log('Received task in getCurrentTask()', receivedTask);
               resolve(receivedTask);
             });
           } else {
             // todo: rm it from here
             getAllDevelopers().then(function(data) {
               rebuildSelect(data);
+              console.log('Received task in getCurrentTask()', {});
               resolve({});
             }, function(err) {
               reject(err);

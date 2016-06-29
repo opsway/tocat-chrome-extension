@@ -77,6 +77,15 @@ input.invalid {
     margin-top: 10px;
 }
 
+.mtb-0 {
+    margin-bottom: 0px;
+    margin-top: 0px;
+}
+
+.m-0 {
+    margin: 0;
+}
+
 .mt-10 {
     margin-top: 10px;
 }
