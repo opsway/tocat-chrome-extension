@@ -1,6 +1,10 @@
 var gulp = require('gulp');
 var concat = require('gulp-concat');
 var concatCss = require('gulp-concat-css');
+var rename = require('gulp-rename');
+var util = require('gulp-util');
+var zip = require('gulp-zip');
+var clean = require('gulp-clean');
 
 gulp.task('concat-scripts', function() {
   return gulp.src([
@@ -32,4 +36,22 @@ gulp.task('concat-css', function() {
     .pipe(gulp.dest('./build/'));
 });
 
+gulp.task('copy-key', function() {
+  return gulp.src(util.env.keyPath ? util.env.keyPath : '../client/key.pem')
+    .pipe(rename('key.pem'))
+    .pipe(gulp.dest('.'));
+});
+
+gulp.task('rm-temporary-key', ['zip'], function(){
+  return gulp.src('./key.pem').
+    pipe(clean({force: true}));
+});
+
+gulp.task('zip', ['copy-key'], () => {
+  return gulp.src('../tocat-chrome-extension/*')
+    .pipe(zip('tocat-chrome-extension.zip'))
+    .pipe(gulp.dest('../'));
+});
+
+gulp.task('compress', ['copy-key', 'zip', 'rm-temporary-key']);
 gulp.task('default', ['concat-scripts', 'concat-css']);
