@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   /**
-   *
+   * Show text under table with orders
    * @param text
    */
   function showOrderText(text) {
@@ -49,7 +49,8 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   /**
-   *
+   * Transform array with objects to object
+   * where key is property and value is object
    * @param array
    * @param property
    * @returns {*}
@@ -73,7 +74,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   /**
-   * temporary solution
+   * Show alert with message
    * @param data
    */
   function errorCather(data) {
@@ -94,6 +95,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  /**
+   * Show message with text Saved in top right corner
+   * @param message
+   */
   function showInformation(message) {
     console.log('showInformation message', message);
     var documentBox = $('#save-message');
@@ -181,15 +186,6 @@ document.addEventListener('DOMContentLoaded', function() {
    */
   function getAuthUrl() {
     return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/authenticate')
-  }
-
-  /**
-   *
-   * @param googleToken
-   * @returns {*}
-   */
-  function getTocatToken(googleToken) {
-    return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/authenticate?code=' + googleToken);
   }
 
   /**
