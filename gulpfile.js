@@ -23,6 +23,15 @@ gulp.task('concat-scripts', function() {
     .pipe(gulp.dest('./build/'));
 });
 
+gulp.task('concat-background-scripts', function() {
+  return gulp.src([
+    './js/tools.js',
+    './js/background.js'
+  ])
+  .pipe(concat('background-assets.js'))
+  .pipe(gulp.dest('./build/'));
+});
+
 gulp.task('concat-css', function() {
   return gulp.src([
     "./style/bootstrap.css",
@@ -54,4 +63,4 @@ gulp.task('zip', ['copy-key'], () => {
 });
 
 gulp.task('compress', ['copy-key', 'zip', 'rm-temporary-key']);
-gulp.task('default', ['concat-scripts', 'concat-css']);
+gulp.task('default', ['concat-scripts', 'concat-css', 'concat-background-scripts']);
