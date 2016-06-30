@@ -150,6 +150,7 @@ var TOCAT_TOOLS = (function() {
 
       if (totalBudget === 0) {
         chrome.browserAction.setBadgeText({text: '0'});
+        chrome.browserAction.setBadgeBackgroundColor({color: '#991e17'});
         return;
       }
 
