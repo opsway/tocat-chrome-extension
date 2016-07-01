@@ -1,12 +1,10 @@
 document.addEventListener('DOMContentLoaded', function() {
   var addOrderBtn = document.getElementById('add-order-btn'),
-    createNewOrder = document.getElementById('create-new-order-btn'),
     selectResolver = document.getElementById('selectResolver'),
     checkboxAccepted = document.getElementById('checkbox-accepted'),
+    checkboxExpense = document.getElementById('checkbox-expense'),
     users = [],
-    bkg = chrome.extension.getBackgroundPage(),
     port = chrome.extension.connect({name: "connection with background"}),
-    url = null,
     // task is global variable. Redo it
     task = null,
     editableGrid = null,
@@ -43,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   /**
-   *
+   * Show text under table with orders
    * @param text
    */
   function showOrderText(text) {
@@ -52,7 +50,8 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   /**
-   *
+   * Transform array with objects to object
+   * where key is property and value is object
    * @param array
    * @param property
    * @returns {*}
@@ -76,7 +75,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   /**
-   * temporary solution
+   * Show alert with message
    * @param data
    */
   function errorCather(data) {
@@ -97,6 +96,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  /**
+   * Show message with text Saved in top right corner
+   * @param message
+   */
   function showInformation(message) {
     console.log('showInformation message', message);
     var documentBox = $('#save-message');
@@ -188,15 +191,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
   /**
    *
-   * @param googleToken
-   * @returns {*}
-   */
-  function getTocatToken(googleToken) {
-    return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/authenticate?code=' + googleToken);
-  }
-
-  /**
-   *
    * @param task
    * @returns {*}
    */
@@ -257,11 +251,14 @@ document.addEventListener('DOMContentLoaded', function() {
     return TOCAT_TOOLS.deleteJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/resolver');
   }
 
-  function setExpensesStatus() {
-    return TOCAT_TOOLS.postJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/expenses')
+  function setExpensesStatus(task) {
+    return TOCAT_TOOLS.postJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/expenses').then(() => {}, (err) => {
+      checkboxExpense.checked = false;
+      errorCather(err);
+    });
   }
 
-  function rmExpensesStatus() {
+  function rmExpensesStatus(task) {
     return TOCAT_TOOLS.deleteJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/expenses');
   }
 
@@ -942,6 +939,26 @@ document.addEventListener('DOMContentLoaded', function() {
           setAcceptStatus(task);
         } else {
           rmAcceptStatus(task);
+        }
+        showInformation('The new task has been created');
+      }
+    });
+
+    checkboxExpense.addEventListener('change', function() {
+      if (TOCAT_TOOLS.isEmptyObject(task)) {
+        createNewTask().then(function(data) {
+          if (checkboxExpense.checked) {
+            setExpensesStatus(data);
+          } else {
+            rmExpensesStatus(data);
+          }
+          showInformation('The new task has been created');
+        }, errorCather);
+      } else {
+        if (checkboxExpense.checked) {
+          setExpensesStatus(task);
+        } else {
+          rmExpensesStatus(task);
         }
         showInformation('The new task has been created');
       }

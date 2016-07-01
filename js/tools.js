@@ -106,7 +106,7 @@ var TOCAT_TOOLS = (function() {
       xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
       xhr.onload = function() {
         var status = xhr.status;
-        if (status == 200 || status == 201) {
+        if (status >= 200 && status < 400) {
           resolve(xhr.response);
         } else {
           reject(xhr.response);
@@ -150,6 +150,7 @@ var TOCAT_TOOLS = (function() {
 
       if (totalBudget === 0) {
         chrome.browserAction.setBadgeText({text: '0'});
+        chrome.browserAction.setBadgeBackgroundColor({color: '#991e17'});
         return;
       }
 

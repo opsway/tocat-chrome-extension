@@ -17,7 +17,7 @@
     "identity"
   ],
   "background": {
-    "scripts": ["js/background.js", "js/tools.js"],
+    "scripts": ["./build/background-assets.js"],
     "persistent": false
   },
   "icons": {
