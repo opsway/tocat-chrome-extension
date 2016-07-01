@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
   var addOrderBtn = document.getElementById('add-order-btn'),
     selectResolver = document.getElementById('selectResolver'),
     checkboxAccepted = document.getElementById('checkbox-accepted'),
+    checkboxExpense = document.getElementById('checkbox-expense'),
     users = [],
     port = chrome.extension.connect({name: "connection with background"}),
     // task is global variable. Redo it
@@ -250,11 +251,14 @@ document.addEventListener('DOMContentLoaded', function() {
     return TOCAT_TOOLS.deleteJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/resolver');
   }
 
-  function setExpensesStatus() {
-    return TOCAT_TOOLS.postJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/expenses')
+  function setExpensesStatus(task) {
+    return TOCAT_TOOLS.postJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/expenses').then(() => {}, (err) => {
+      checkboxExpense.checked = false;
+      errorCather(err);
+    });
   }
 
-  function rmExpensesStatus() {
+  function rmExpensesStatus(task) {
     return TOCAT_TOOLS.deleteJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/expenses');
   }
 
@@ -935,6 +939,26 @@ document.addEventListener('DOMContentLoaded', function() {
           setAcceptStatus(task);
         } else {
           rmAcceptStatus(task);
+        }
+        showInformation('The new task has been created');
+      }
+    });
+
+    checkboxExpense.addEventListener('change', function() {
+      if (TOCAT_TOOLS.isEmptyObject(task)) {
+        createNewTask().then(function(data) {
+          if (checkboxExpense.checked) {
+            setExpensesStatus(data);
+          } else {
+            rmExpensesStatus(data);
+          }
+          showInformation('The new task has been created');
+        }, errorCather);
+      } else {
+        if (checkboxExpense.checked) {
+          setExpensesStatus(task);
+        } else {
+          rmExpensesStatus(task);
         }
         showInformation('The new task has been created');
       }
