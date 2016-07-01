@@ -457,6 +457,7 @@ document.addEventListener('DOMContentLoaded', function() {
    */
   function renderTable(data, allOrders) {
     // todo: check are you manager
+    console.log('Rendered data in renderTable ', data);
     var metadata = [];
     metadata.push({name: "order", label: "Order", datatype: "string", editable: true});
     metadata.push({name: "budget_left", label: "Budget left", datatype: "integer", editable: false});
@@ -514,6 +515,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
           getOrder(newValue).then(function(data) {
             editableGrid.setValueAt(rowIdx, 1, data.free_budget);
+            editableGrid.setValueAt(rowIdx, 3, data.paid);
           });
           if (!TOCAT_TOOLS.isEmptyObject(task)) {
             getTicketBudget(newValue, task.id).then(function(data) {
