@@ -64,3 +64,4 @@ gulp.task('zip', ['copy-key'], () => {
 
 gulp.task('compress', ['copy-key', 'zip', 'rm-temporary-key']);
 gulp.task('default', ['concat-scripts', 'concat-css', 'concat-background-scripts']);
+gulp.watch(['js/**/*.js', 'style/**/*.css'], ['default']);
