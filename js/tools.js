@@ -161,6 +161,9 @@ var TOCAT_TOOLS = (function() {
         chrome.browserAction.setBadgeText({text: '—'});
         chrome.browserAction.setBadgeBackgroundColor({color: '#991e17'});
       }
+    }, function(err) {
+      console.log('error in updateIcon ', err);
+      chrome.browserAction.setBadgeText({text: ''});
     });
   }
 
