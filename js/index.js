@@ -813,7 +813,7 @@ document.addEventListener('DOMContentLoaded', function() {
     return new Promise(function(resolve, reject) {
       chrome.tabs.query({'active': true, 'lastFocusedWindow': true}, function (tabs) {
         console.log('Current url in getCurrentUrl() ', tabs[0].url.split('#')[0]);
-        resolve(tabs[0].url.split('#')[0]);
+        resolve(tabs[0].url);
       });
     });
   }
@@ -825,7 +825,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function getCurrentTask() {
     return new Promise(function(resolve, reject) {
       getCurrentUrl().then(function(data) {
-        TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/tasks/?search=external_id=' + data).then(function(data) {
+        TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/tasks/?search=external_id=' + encodeURIComponent(data)).then(function(data) {
           if (data.length) {
             // todo: rm it from here
             rebuildSelect(data[0].potential_resolvers);
