@@ -906,8 +906,9 @@ document.addEventListener('DOMContentLoaded', function() {
           }
           showInformation('The new task has been created');
           // maybe rm it from here
-          chrome.browserAction.setBadgeText({text: '0'});
+          chrome.browserAction.setBadgeText({text: '—'});
         }, errorCather);
+        return;
       }
 
       if (parseInt(selectedResolver.value, 10)) {
