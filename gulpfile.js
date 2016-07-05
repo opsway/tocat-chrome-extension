@@ -69,4 +69,6 @@ gulp.task('zip', ['rm-node_modules'], () => {
 
 gulp.task('compress', ['copy-key', 'rm-node_modules', 'zip', 'rm-temporary-key']);
 gulp.task('default', ['concat-scripts', 'concat-css', 'concat-background-scripts']);
-gulp.watch(['js/**/*.js', 'style/**/*.css'], ['default']);
+gulp.task('watch', function() {
+  return gulp.watch(['js/**/*.js', 'style/**/*.css'], ['default']);
+});
