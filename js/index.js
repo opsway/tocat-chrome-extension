@@ -226,6 +226,54 @@ document.addEventListener('DOMContentLoaded', function() {
     checkboxAccepted.checked = value;
   }
 
+  function disableSelectResolverBox() {
+    selectResolver.disabled = true;
+  }
+
+  function enableSelectResolverBox() {
+    selectResolver.disabled = false;
+  }
+
+  function disableSelectOrderEditability() {
+    editableGrid.columns[0].editable = false;
+  }
+
+  function enableSelectOrderEditability() {
+    editableGrid.columns[0].editable = true;
+  }
+
+  function disableTicketBudgetEditability() {
+    editableGrid.columns[2].editable = false;
+  }
+
+  function enableTicketBudgetEditability() {
+    editableGrid.columns[2].editable = true;
+  }
+
+  function disableAddButton() {
+    addOrderBtn.disabled = true;
+  }
+
+  function enableAddButton() {
+    addOrderBtn.disabled = false;
+  }
+
+  function checkPermission() {
+    if (!TOCAT_TOOLS.isEmptyObject(task)) {
+      if (task.expenses) {
+        disableAddButton();
+        disableSelectResolverBox();
+        disableSelectOrderEditability();
+        disableTicketBudgetEditability();
+      } else {
+        enableAddButton();
+        enableSelectResolverBox();
+        enableSelectOrderEditability();
+        enableTicketBudgetEditability();
+      }
+    }
+  }
+
   function setExpenseStatusOfTask(value) {
     var checkboxExpense = document.getElementById('checkbox-expense');
     checkboxExpense.checked = value;
@@ -252,14 +300,18 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function setExpensesStatus(task) {
-    return TOCAT_TOOLS.postJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/expenses').then(() => {}, (err) => {
+    return TOCAT_TOOLS.postJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/expenses').then(function () {
+      task.expenses = true;
+    }, (err) => {
       checkboxExpense.checked = false;
       errorCather(err);
     });
   }
 
   function rmExpensesStatus(task) {
-    return TOCAT_TOOLS.deleteJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/expenses');
+    return TOCAT_TOOLS.deleteJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/expenses').then(function () {
+      task.expenses = false;
+    });
   }
 
   /**
@@ -572,33 +624,37 @@ document.addEventListener('DOMContentLoaded', function() {
       cell.innerHTML = '<span class="pointer" id="' + guidId + '"><button type="button" class="btn btn-sm btn-danger"><em class="fa fa-trash"></em></button></span>';
       var deleteButton = document.getElementById(guidId);
       deleteButton.addEventListener('click', function() {
-        bootbox.confirm('Are you sure you want to remove order?', function(result) {
-          if (result) {
-            var orderId = editableGrid.getValueAt(cell.rowIndex, 0);
-            // Select means empty order
-            if (orderId !== 'Select') {
-              rmOrder(parseInt(orderId, 10), task).then(function() {
+        if (!task.expenses) {
+          bootbox.confirm('Are you sure you want to remove order?', function(result) {
+            if (result) {
+              var orderId = editableGrid.getValueAt(cell.rowIndex, 0);
+              // Select means empty order
+              if (orderId !== 'Select') {
+                rmOrder(parseInt(orderId, 10), task).then(function() {
+                  editableGrid.remove(cell.rowIndex);
+                  if (!editableGrid.getTotalRowCount()) {
+                    hideTable();
+                    showOrderText('No orders yet, please add one');
+                  }
+                  refreshTask();
+                  getCurrentUrl().then(function(data) {
+                    TOCAT_TOOLS.updateIcon(data);
+                  }, errorCather);
+                }, function(err) {
+                  showErrors(err.errors);
+                });
+              } else {
                 editableGrid.remove(cell.rowIndex);
                 if (!editableGrid.getTotalRowCount()) {
                   hideTable();
                   showOrderText('No orders yet, please add one');
                 }
-                refreshTask();
-                getCurrentUrl().then(function(data) {
-                  TOCAT_TOOLS.updateIcon(data);
-                }, errorCather);
-              }, function(err) {
-                showErrors(err.errors);
-              });
-            } else {
-              editableGrid.remove(cell.rowIndex);
-              if (!editableGrid.getTotalRowCount()) {
-                hideTable();
-                showOrderText('No orders yet, please add one');
               }
             }
-          }
-        });
+          });
+        } else {
+          showErrors(["You don't have permission to remove this order"]);
+        }
       });
 
     }}));
@@ -627,6 +683,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }}));
 
     editableGrid.renderGrid("tablecontent", "ordersGrid");
+
+    window.editableGrid = editableGrid;
+
     // ugly solution
     var orders = document.getElementsByClassName('editablegrid-order');
     for (var i = 0 ; i < orders.length ; i++) {
@@ -704,6 +763,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (taskOrders.length) {
       var data = adjustTaskOrders(taskOrders, budget);
       renderTable(data, allOrders);
+      checkPermission();
     } else {
       showOrderText('No orders yet, please add one');
     }
@@ -768,6 +828,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setPaidStatusOfTask(task.paid);
     setAcceptedStatusOfTask(task.accepted);
     setExpenseStatusOfTask(task.expenses);
+
     if (task.resolver && task.resolver.id) {
       setResolverOfTask(task.resolver.id);
     }
@@ -960,9 +1021,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }, errorCather);
       } else {
         if (checkboxExpense.checked) {
-          setExpensesStatus(task);
+          setExpensesStatus(task).then(function() {
+            checkPermission();
+          });
         } else {
-          rmExpensesStatus(task);
+          rmExpensesStatus(task).then(function() {
+            checkPermission();
+          });
         }
         showInformation('The new task has been created');
       }
