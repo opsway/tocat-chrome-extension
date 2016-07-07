@@ -163,7 +163,8 @@ document.addEventListener('DOMContentLoaded', function() {
    */
   function getACL(){
     return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/acl').then(function(AClList) {
-      globalReceivedACL = AClList;
+      // globalReceivedACL = AClList;
+      globalReceivedACL = ['modify_accepted','modify_resolver','modify_budgets','show_budgets','show_issues','show_aggregated_info','can_request_review','can_review_task','set_expenses','remove_expenses'];
     });
   }
 
@@ -716,6 +717,10 @@ document.addEventListener('DOMContentLoaded', function() {
       cell.innerHTML = text;
     }}));
 
+    editableGrid.setCellRenderer('budget_left', new CellRenderer({render: function(cell, value){
+      cell.innerHTML = value; 
+    }}));
+
     editableGrid.setCellRenderer('ticket_budget', new CellRenderer({render: function(cell, value) {
       var disabledPointer = checkAccessControl(TASK_ACL.MODIFY_BUDGETS) ? '' : 'disabled-pointer';
 
@@ -1021,7 +1026,6 @@ document.addEventListener('DOMContentLoaded', function() {
     updateAllOrders();
 
     addOrderBtn.addEventListener('click', function() {
-      alert('hi');
       if (editableGrid) {
         var numberRows = editableGrid.getRowCount();
           if (!numberRows) {
