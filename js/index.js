@@ -319,7 +319,7 @@ document.addEventListener('DOMContentLoaded', function() {
    * @returns {*}
    */
   function getAllOrders() {
-    return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/orders?search=completed != 1');
+    return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/orders?limit=9999999&search=completed = 0 free_budget>0');
   }
 
   /**
