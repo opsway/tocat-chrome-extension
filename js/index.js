@@ -11,7 +11,20 @@ document.addEventListener('DOMContentLoaded', function() {
     globalAllOrders = null,
     globalPotentialOrders = null,
     loginButton = document.getElementById('loginButton'),
-    content = document.getElementById('content');
+    content = document.getElementById('content'),
+    TASK_ACL = {
+      MODIFY_ACCEPTED: 'modify_accepted', //user can request "Accept Task" (setting or removing accept flag)',
+      MODIFY_RESOLVER: 'modify_resolver', //user can change "Resolver" (setting or removing resolver of the task)',
+      MODIFY_BUDGETS: 'modify_budgets', //user can add/remove orders to task, change budget',
+      SHOW_BUDGETS: 'show_budgets', //user can see orders connected to the task',
+      SHOW_ISSUES: 'show_issues', //user can see list of tasks (also - list of teams, users)',
+      SHOW_AGGREGATED_INFO: 'show_aggregated_info', //user can see tocat data (budget, resolver, orders) of the task',
+      CAN_REQUEST_REVIEW: 'can_request_review', //user can request review of the task',
+      CAN_REVIEW_TASK: 'can_review_task', //user can review the task',
+      SET_EXPENSES: 'set_expenses', //user can set "expenses" flag of the task',
+      REMOVE_EXPENSES: 'remove_expenses' //user can remove "expenses" flag of the task'
+    },
+    globalReceivedACL = [];
 
   function showLoginButton() {
     loginButton.classList.remove('hide');
@@ -146,6 +159,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
   /**
    *
+   * @returns {*}
+   */
+  function getACL(){
+    return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/acl').then(function(AClList) {
+      globalReceivedACL = AClList;
+    });
+  }
+
+  /**
+   *
+   * @param accessString
+   * @returns {number|Number}
+   */
+  function checkAccessControl(accessString) {
+    if (!accessString) {
+      console.error('accessString is empty');
+      return;
+    }
+
+    return globalReceivedACL.indexOf(accessString) + 1;
+  }
+
+  /**
+   *
    * @param orderId
    * @returns {Promise}
    */
@@ -224,6 +261,12 @@ document.addEventListener('DOMContentLoaded', function() {
   function setAcceptedStatusOfTask(value) {
     var checkboxAccepted = document.getElementById('checkbox-accepted');
     checkboxAccepted.checked = value;
+
+    if (checkAccessControl(TASK_ACL.MODIFY_ACCEPTED)) {
+      checkboxAccepted.disabled = false;
+    } else {
+      checkboxAccepted.disabled = true;
+    }
   }
 
   function disableSelectResolverBox() {
@@ -266,10 +309,12 @@ document.addEventListener('DOMContentLoaded', function() {
         disableSelectOrderEditability();
         disableTicketBudgetEditability();
       } else {
-        enableAddButton();
-        enableSelectResolverBox();
-        enableSelectOrderEditability();
-        enableTicketBudgetEditability();
+        if (checkAccessControl(TASK_ACL.MODIFY_BUDGETS) && checkAccessControl(TASK_ACL.MODIFY_RESOLVER)) {
+          enableAddButton();
+          enableSelectResolverBox();
+          enableSelectOrderEditability();
+          enableTicketBudgetEditability();
+        }
       }
     }
   }
@@ -621,10 +666,11 @@ document.addEventListener('DOMContentLoaded', function() {
     editableGrid.setCellRenderer('action', new CellRenderer({render: function(cell, value) {
       var guidId = TOCAT_TOOLS.guidGenerator();
 
-      cell.innerHTML = '<span class="pointer" id="' + guidId + '"><button type="button" class="btn btn-sm btn-danger"><em class="fa fa-trash"></em></button></span>';
+      var disabled = checkAccessControl(TASK_ACL.MODIFY_BUDGETS) ? '' : 'disabled';
+      cell.innerHTML = '<span class="pointer" id="' + guidId + '"><button type="button" class="btn btn-sm btn-danger" ' + disabled + '><em class="fa fa-trash"></em></button></span>';
       var deleteButton = document.getElementById(guidId);
       deleteButton.addEventListener('click', function() {
-        if (!task.expenses) {
+        if (!task.expenses && checkAccessControl(TASK_ACL.MODIFY_BUDGETS)) {
           bootbox.confirm('Are you sure you want to remove order?', function(result) {
             if (result) {
               var orderId = editableGrid.getValueAt(cell.rowIndex, 0);
@@ -657,6 +703,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       });
 
+      /*deleteButton.addEventListener('mouseover', function(){
+        if (!checkAccessControl(TASK_ACL.MODIFY_BUDGETS)) {
+          deleteButton.children[0].disabled = true;
+        }
+      });*/
+
     }}));
 
     editableGrid.setCellRenderer('paid', new CellRenderer({render: function(cell, value) {
@@ -665,20 +717,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }}));
 
     editableGrid.setCellRenderer('ticket_budget', new CellRenderer({render: function(cell, value) {
-      cell.innerHTML = value + '<em class="icon-pencil icon-pencil-format"></em>';
+      var disabledPointer = checkAccessControl(TASK_ACL.MODIFY_BUDGETS) ? '' : 'disabled-pointer';
+
+      cell.innerHTML = '<div class="' + disabledPointer + '">' + value + '<em class="icon-pencil icon-pencil-format"></em></div>';
     }}));
 
     editableGrid.setCellRenderer('order', new CellRenderer({render: function(cell, value) {
+      var disabledPointer = checkAccessControl(TASK_ACL.MODIFY_BUDGETS) ? '' : 'disabled-pointer';
+
       if (value === 'Select') {
-        cell.innerHTML = value+ '<em class="icon-pencil icon-pencil-format mr-5"></em>';
+        cell.innerHTML = '<div class="' + disabledPointer + '">' + value + '<em class="icon-pencil icon-pencil-format mr-5"></em></div>';
       }
 
       if (TOCAT_TOOLS.isEmptyObject(globalPotentialOrders) && globalAllOrders[value]) {
-        cell.innerHTML = globalAllOrders[value].name + '<em class="icon-pencil icon-pencil-format mr-5"></em>';
+        cell.innerHTML = '<div class="' + disabledPointer + '">' + globalAllOrders[value].name + '<em class="icon-pencil icon-pencil-format mr-5"></em></div>';
       }
 
       if (!TOCAT_TOOLS.isEmptyObject(globalPotentialOrders) && globalPotentialOrders[value]) {
-        cell.innerHTML = globalPotentialOrders[value].name + '<em class="icon-pencil icon-pencil-format mr-5"></em>';
+        cell.innerHTML = '<div class="' + disabledPointer + '">' + globalPotentialOrders[value].name + '<em class="icon-pencil icon-pencil-format mr-5"></em></div>';
       }
     }}));
 
@@ -759,11 +815,13 @@ document.addEventListener('DOMContentLoaded', function() {
    * @param budget
    */
   function initTable(allOrders, taskOrders, budget) {
-
     if (taskOrders.length) {
       var data = adjustTaskOrders(taskOrders, budget);
       renderTable(data, allOrders);
       checkPermission();
+      setAccessabilityOfExpenseCheckbox();
+      setAccessabilityOfSelectResolver();
+      setAccessabilityOfChangeOrders();
     } else {
       showOrderText('No orders yet, please add one');
     }
@@ -816,6 +874,51 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (flagSelected) {
       selectResolver.value = oldValue;
+    }
+  }
+
+  function setAccessabilityOfSelectResolver() {
+    if (checkAccessControl(TASK_ACL.MODIFY_RESOLVER)) {
+      selectResolver.disabled = false;
+    } else {
+      selectResolver.disabled = true;
+    }
+  }
+
+  function setAccessabilityOfChangeOrders() {
+    if (!checkAccessControl(TASK_ACL.MODIFY_BUDGETS)) {
+      disableAddButton();
+      disableSelectResolverBox();
+      disableSelectOrderEditability();
+      disableTicketBudgetEditability();
+    } else {
+      enableAddButton();
+      enableSelectResolverBox();
+      enableSelectOrderEditability();
+      enableTicketBudgetEditability();
+    }
+  }
+
+  function setAccessabilityOfOrders() {
+    var ordersWrapper = document.getElementById('content-wrapper');
+    if (checkAccessControl(TASK_ACL.SHOW_BUDGETS)) {
+      ordersWrapper.style.display = '';
+    } else {
+      ordersWrapper.style.display = 'none';
+    }
+  }
+
+  function setAccessabilityOfExpenseCheckbox() {
+    checkboxExpense.disabled = true;
+    if (checkAccessControl(TASK_ACL.REMOVE_EXPENSES) && checkAccessControl(TASK_ACL.SET_EXPENSES)) {
+      checkboxExpense.disabled = false;
+    }
+
+    if (checkboxExpense.checked && checkAccessControl(TASK_ACL.REMOVE_EXPENSES)) {
+      checkboxExpense.disabled = false;
+    }
+    if (!checkboxExpense.checked && checkAccessControl(TASK_ACL.SET_EXPENSES)) {
+      checkboxExpense.disabled = false;
     }
   }
 
@@ -918,6 +1021,7 @@ document.addEventListener('DOMContentLoaded', function() {
     updateAllOrders();
 
     addOrderBtn.addEventListener('click', function() {
+      alert('hi');
       if (editableGrid) {
         var numberRows = editableGrid.getRowCount();
           if (!numberRows) {
@@ -1014,8 +1118,10 @@ document.addEventListener('DOMContentLoaded', function() {
         createNewTask().then(function(data) {
           if (checkboxExpense.checked) {
             setExpensesStatus(data);
+            setAccessabilityOfExpenseCheckbox();
           } else {
             rmExpensesStatus(data);
+            setAccessabilityOfExpenseCheckbox();
           }
           showInformation('The new task has been created');
         }, errorCather);
@@ -1023,10 +1129,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (checkboxExpense.checked) {
           setExpensesStatus(task).then(function() {
             checkPermission();
+            setAccessabilityOfExpenseCheckbox();
           });
         } else {
           rmExpensesStatus(task).then(function() {
             checkPermission();
+            setAccessabilityOfExpenseCheckbox();
           });
         }
         showInformation('The new task has been created');
@@ -1047,8 +1155,16 @@ document.addEventListener('DOMContentLoaded', function() {
       case 'getToken':
         if (msg.token) {
           TOCAT_TOOLS.setTokenHeader(msg.token);
-          renderContent();
-          showContent();
+          getACL().then(function () {
+            if (checkAccessControl(TASK_ACL.SHOW_AGGREGATED_INFO)) {
+              renderContent();
+              setAccessabilityOfOrders();
+              showContent();
+            } else {
+              document.body.style.height = '200px';
+              showErrors(["you don't have permission"]);
+            }
+          });
         } else {
           hideSpinner();
           showLoginButton();

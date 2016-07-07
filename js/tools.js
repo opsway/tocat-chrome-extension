@@ -26,6 +26,7 @@ var TOCAT_TOOLS = (function() {
       }
 
       if ((counterRequest != counterResponse) && spinner) {
+        // todo: rm it from here
         spinner.innerHTML =
           '<div class="sk-circle">' +
           '<div class="sk-circle1 sk-child"></div>' +
