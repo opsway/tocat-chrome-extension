@@ -163,6 +163,7 @@ document.addEventListener('DOMContentLoaded', function() {
    */
   function getACL(){
     return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/acl').then(function(AClList) {
+      console.log('AClList ', AClList);
       globalReceivedACL = AClList;
       // globalReceivedACL = ['modify_accepted','modify_resolver','modify_budgets','show_budgets','show_issues','show_aggregated_info','can_request_review','can_review_task','set_expenses','remove_expenses'];
     });
@@ -279,19 +280,27 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function disableSelectOrderEditability() {
-    editableGrid.columns[0].editable = false;
+    if (editableGrid) {
+      editableGrid.columns[0].editable = false;
+    }
   }
 
   function enableSelectOrderEditability() {
-    editableGrid.columns[0].editable = true;
+    if (editableGrid) {
+      editableGrid.columns[0].editable = true;
+    }
   }
 
   function disableTicketBudgetEditability() {
-    editableGrid.columns[2].editable = false;
+    if (editableGrid) {
+      editableGrid.columns[2].editable = false;
+    }
   }
 
   function enableTicketBudgetEditability() {
-    editableGrid.columns[2].editable = true;
+    if (editableGrid) {
+      editableGrid.columns[2].editable = true;
+    }
   }
 
   function disableAddButton() {
@@ -881,6 +890,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function setAccessabilityOfSelectResolver() {
+    console.log('checkAccessControl(TASK_ACL.MODIFY_RESOLVER) ', checkAccessControl(TASK_ACL.MODIFY_RESOLVER));
     if (checkAccessControl(TASK_ACL.MODIFY_RESOLVER)) {
       selectResolver.disabled = false;
     } else {
@@ -1161,6 +1171,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (checkAccessControl(TASK_ACL.SHOW_AGGREGATED_INFO)) {
               renderContent();
               setAccessabilityOfOrders();
+              setAccessabilityOfExpenseCheckbox();
+              setAccessabilityOfSelectResolver();
               showContent();
             } else {
               document.body.style.height = '200px';
