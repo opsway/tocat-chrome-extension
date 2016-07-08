@@ -579,6 +579,15 @@ document.addEventListener('DOMContentLoaded', function() {
         if (colIdx === 2) {
           var orderId = editableGrid.getValueAt(rowIdx, 0);
           if (orderId !== 'Select') {
+
+            if (globalAllOrders[orderId]) {
+              var freeBudget = globalAllOrders[orderId].free_budget,
+                rest = freeBudget - parseInt(newValue, 10);
+              if (rest > 0) {
+                editableGrid.setValueAt(rowIdx, 1, rest);
+              }
+            }
+
             if (!TOCAT_TOOLS.isEmptyObject(task)) {
               updateOrders({
                 order_id: parseInt(orderId, 10),
@@ -800,6 +809,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
     return results;
   }
+
+  /*function sortObject(obj) {
+    var arr = [];
+    var prop;
+
+    for (prop in obj) {
+      if (obj.hasOwnProperty(prop)) {
+        arr.push({
+          'key': prop,
+          'value': obj[prop]
+        });
+      }
+    }
+    arr.sort(function(a, b) {
+      var x = a.value.toLowerCase();
+      var y = b.value.toLowerCase();
+      return x < y ? -1 : x > y ? 1 : 0;
+    });
+  }*/
 
   /**
    *
