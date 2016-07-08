@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     return new Promise(function(resolve, reject) {
       TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/user/' + userId).then(function(data) {
-        TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/orders?search=team==' + data.tocat_team.name + ' completed != 1')
+        TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/orders?limit=9999999&search=team==' + encodeURIComponent(data.tocat_team.name) + ' completed = 0&sorted_by=name')
           .then(function (data){
             resolve(data);
           }, errorCather);
@@ -163,8 +163,8 @@ document.addEventListener('DOMContentLoaded', function() {
    */
   function getACL(){
     return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/acl').then(function(AClList) {
-      // globalReceivedACL = AClList;
-      globalReceivedACL = ['modify_accepted','modify_resolver','modify_budgets','show_budgets','show_issues','show_aggregated_info','can_request_review','can_review_task','set_expenses','remove_expenses'];
+      globalReceivedACL = AClList;
+      // globalReceivedACL = ['modify_accepted','modify_resolver','modify_budgets','show_budgets','show_issues','show_aggregated_info','can_request_review','can_review_task','set_expenses','remove_expenses'];
     });
   }
 
@@ -365,7 +365,7 @@ document.addEventListener('DOMContentLoaded', function() {
    * @returns {*}
    */
   function getAllOrders() {
-    return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/orders?limit=9999999&search=completed = 0 free_budget>0');
+    return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/orders?limit=9999999&search=completed = 0 free_budget>0&sort=name');
   }
 
   /**
@@ -718,7 +718,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }}));
 
     editableGrid.setCellRenderer('budget_left', new CellRenderer({render: function(cell, value){
-      cell.innerHTML = value; 
+      cell.innerHTML = value;
     }}));
 
     editableGrid.setCellRenderer('ticket_budget', new CellRenderer({render: function(cell, value) {
@@ -801,9 +801,7 @@ document.addEventListener('DOMContentLoaded', function() {
    */
   function getAdjustedFreeOrders(editableGrid, allOrders, notThisId) {
     var usedOrders = getAllSelectedValuesWithoutOne(editableGrid, notThisId);
-    console.log('all selected values without one', usedOrders);
     var freeOrders = getFreeOrders(allOrders, usedOrders);
-    console.log('all free values', freeOrders);
     var adjustedOrders = {}
     for (var prop in freeOrders) {
       if (freeOrders.hasOwnProperty(prop)) {
@@ -1168,6 +1166,9 @@ document.addEventListener('DOMContentLoaded', function() {
               document.body.style.height = '200px';
               showErrors(["you don't have permission"]);
             }
+          }, function() {
+            document.body.style.height = '200px';
+            showErrors(["you don't have permission"]);
           });
         } else {
           hideSpinner();
