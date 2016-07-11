@@ -202,7 +202,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     return new Promise(function(resolve, reject) {
-      TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/order/' + orderId).then(function(order) {
+      getOrder(orderId).then(function(order) {
         TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users?search=role=Developer team=' + order.team.name)
           .then(function (data){
             resolve(data);
@@ -398,6 +398,9 @@ document.addEventListener('DOMContentLoaded', function() {
    * @returns {*}
    */
   function getOrder(orderId) {
+    if (typeof(orderId) === 'string') {
+      orderId = orderId.split("'")[1];
+    }
     return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/order/' + orderId);
   }
 
@@ -532,7 +535,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function adjustAllOrders(allOrders) {
     var result = {};
     for (var i = 0 ; i < allOrders.length ; i++) {
-      result[allOrders[i].id] = allOrders[i].name;
+      result["'" + allOrders[i].id + "'"] = allOrders[i].name;
     }
     return result;
   }
@@ -549,9 +552,9 @@ document.addEventListener('DOMContentLoaded', function() {
       for (var j = 0 ; j < budget.length ; j ++) {
         if (taskOrders[i].id == budget[j].order_id) {
           result.push({
-            id: taskOrders[i].id,
+            id: "'" + taskOrders[i].id + "'",
             values: {
-              order: taskOrders[i].id,
+              order: "'" + taskOrders[i].id + "'",
               "budget_left": taskOrders[i].free_budget,
               "ticket_budget": budget[j].budget,
               "paid": taskOrders[i].paid
@@ -586,6 +589,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (colIdx === 2) {
           var orderId = editableGrid.getValueAt(rowIdx, 0);
           if (orderId !== 'Select') {
+            orderId = parseInt(orderId.split("'")[1]);
 
             if (globalAllOrders[orderId]) {
               var freeBudget = globalAllOrders[orderId].free_budget,
@@ -670,7 +674,7 @@ document.addEventListener('DOMContentLoaded', function() {
               if (globalPotentialOrders) {
                 for (var prop in globalPotentialOrders) {
                   if (globalPotentialOrders.hasOwnProperty(prop)) {
-                    adjustedOrders[globalPotentialOrders[prop].id] = globalPotentialOrders[prop].name;
+                    adjustedOrders[globalPotentialOrders[prop].id ] = globalPotentialOrders[prop].name;
                   }
                 }
               } else {
@@ -702,6 +706,7 @@ document.addEventListener('DOMContentLoaded', function() {
               var orderId = editableGrid.getValueAt(cell.rowIndex, 0);
               // Select means empty order
               if (orderId !== 'Select') {
+                orderId = parseInt(orderId.split("'")[1], 10);
                 rmOrder(parseInt(orderId, 10), task).then(function() {
                   editableGrid.remove(cell.rowIndex);
                   if (!editableGrid.getTotalRowCount()) {
@@ -757,14 +762,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
       if (value === 'Select') {
         cell.innerHTML = '<div class="' + disabledPointer + '">' + value + '<em class="icon-pencil icon-pencil-format mr-5"></em></div>';
+        return;
       }
 
-      if (TOCAT_TOOLS.isEmptyObject(globalPotentialOrders) && globalAllOrders[value]) {
-        cell.innerHTML = '<div class="' + disabledPointer + '">' + globalAllOrders[value].name + '<em class="icon-pencil icon-pencil-format mr-5"></em></div>';
+      parsedValue = parseInt(value.split("'")[1], 10);
+      if (TOCAT_TOOLS.isEmptyObject(globalPotentialOrders) && globalAllOrders[parsedValue]) {
+        cell.innerHTML = '<div class="' + disabledPointer + '">' + globalAllOrders[parsedValue].name + '<em class="icon-pencil icon-pencil-format mr-5"></em></div>';
       }
 
-      if (!TOCAT_TOOLS.isEmptyObject(globalPotentialOrders) && globalPotentialOrders[value]) {
-        cell.innerHTML = '<div class="' + disabledPointer + '">' + globalPotentialOrders[value].name + '<em class="icon-pencil icon-pencil-format mr-5"></em></div>';
+      if (!TOCAT_TOOLS.isEmptyObject(globalPotentialOrders) && globalPotentialOrders[parsedValue]) {
+        cell.innerHTML = '<div class="' + disabledPointer + '">' + globalPotentialOrders[parsedValue].name + '<em class="icon-pencil icon-pencil-format mr-5"></em></div>';
       }
     }}));
 
@@ -787,8 +794,8 @@ document.addEventListener('DOMContentLoaded', function() {
    * @returns {Array}
    */
   function getAllSelectedValuesWithoutOne(editableGrid, notThisId) {
-    var rowCount = editableGrid.getTotalRowCount();
-    var results = [];
+    var rowCount = editableGrid.getTotalRowCount(),
+      results = [];
 
     for (var i = 0 ; i < rowCount ; i++) {
       var order = editableGrid.getValueAt(i, 0);
@@ -796,11 +803,12 @@ document.addEventListener('DOMContentLoaded', function() {
         continue;
       }
 
-      if (parseInt(order, 10) == parseInt(notThisId, 10)) {
+      if (order == notThisId) {
         continue;
       }
 
-      results.push(parseInt(editableGrid.getValueAt(i, 0)));
+      order = typeof order == "string" ? parseInt(order.split("'")[1], 10) : order;
+      results.push(order);
     }
 
     return results;
@@ -817,9 +825,10 @@ document.addEventListener('DOMContentLoaded', function() {
     return results;
   }
 
-  /*function sortObject(obj) {
-    var arr = [];
-    var prop;
+  function sortObject(obj) {
+    var arr = [],
+      prop,
+      result = {};
 
     for (prop in obj) {
       if (obj.hasOwnProperty(prop)) {
@@ -834,7 +843,13 @@ document.addEventListener('DOMContentLoaded', function() {
       var y = b.value.toLowerCase();
       return x < y ? -1 : x > y ? 1 : 0;
     });
-  }*/
+
+    arr.forEach(function(element) {
+      result["'" + element.key + "'"] = element.value;
+    });
+
+    return result;
+  }
 
   /**
    *
@@ -845,13 +860,17 @@ document.addEventListener('DOMContentLoaded', function() {
    */
   function getAdjustedFreeOrders(editableGrid, allOrders, notThisId) {
     var usedOrders = getAllSelectedValuesWithoutOne(editableGrid, notThisId);
+    console.log('usedOrders ', usedOrders);
     var freeOrders = getFreeOrders(allOrders, usedOrders);
+    console.log('freeOrders ', freeOrders);
     var adjustedOrders = {}
     for (var prop in freeOrders) {
       if (freeOrders.hasOwnProperty(prop)) {
         adjustedOrders[freeOrders[prop].id] = freeOrders[prop].name;
       }
     }
+
+    adjustedOrders = sortObject(adjustedOrders);
     return adjustedOrders;
   }
 
