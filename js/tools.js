@@ -26,6 +26,7 @@ var TOCAT_TOOLS = (function() {
       }
 
       if ((counterRequest != counterResponse) && spinner) {
+        // todo: rm it from here
         spinner.innerHTML =
           '<div class="sk-circle">' +
           '<div class="sk-circle1 sk-child"></div>' +
@@ -118,6 +119,7 @@ var TOCAT_TOOLS = (function() {
     });
   }
 
+  // todo: rm this function, use _.isEmpty()
   /**
    *
    * @param obj
@@ -137,7 +139,7 @@ var TOCAT_TOOLS = (function() {
    * @param url
    */
   function updateIcon(url) {
-    TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/tasks/?search=external_id=' + url.split('?')[0]).then(function(data) {
+    TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/tasks/?search=external_id=' + encodeURIComponent(url)).then(function(data) {
       var orders = [];
       var totalBudget = null;
       if (data.length) {
@@ -149,7 +151,7 @@ var TOCAT_TOOLS = (function() {
       }
 
       if (totalBudget === 0) {
-        chrome.browserAction.setBadgeText({text: '0'});
+        chrome.browserAction.setBadgeText({text: '—'});
         chrome.browserAction.setBadgeBackgroundColor({color: '#991e17'});
         return;
       }
@@ -161,6 +163,9 @@ var TOCAT_TOOLS = (function() {
         chrome.browserAction.setBadgeText({text: '—'});
         chrome.browserAction.setBadgeBackgroundColor({color: '#991e17'});
       }
+    }, function(err) {
+      console.log('error in updateIcon ', err);
+      chrome.browserAction.setBadgeText({text: ''});
     });
   }
 

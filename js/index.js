@@ -11,7 +11,22 @@ document.addEventListener('DOMContentLoaded', function() {
     globalAllOrders = null,
     globalPotentialOrders = null,
     loginButton = document.getElementById('loginButton'),
-    content = document.getElementById('content');
+    content = document.getElementById('content'),
+    TASK_ACL = {
+      MODIFY_ACCEPTED: 'modify_accepted', //user can request "Accept Task" (setting or removing accept flag)',
+      MODIFY_RESOLVER: 'modify_resolver', //user can change "Resolver" (setting or removing resolver of the task)',
+      MODIFY_BUDGETS: 'modify_budgets', //user can add/remove orders to task, change budget',
+      SHOW_BUDGETS: 'show_budgets', //user can see orders connected to the task',
+      SHOW_ISSUES: 'show_issues', //user can see list of tasks (also - list of teams, users)',
+      SHOW_AGGREGATED_INFO: 'show_aggregated_info', //user can see tocat data (budget, resolver, orders) of the task',
+      CAN_REQUEST_REVIEW: 'can_request_review', //user can request review of the task',
+      CAN_REVIEW_TASK: 'can_review_task', //user can review the task',
+      SET_EXPENSES: 'set_expenses', //user can set "expenses" flag of the task',
+      REMOVE_EXPENSES: 'remove_expenses' //user can remove "expenses" flag of the task'
+    },
+    globalReceivedACL = [],
+    bkg = chrome.extension.getBackgroundPage(),
+    bcl = bkg.console.log;
 
   function showLoginButton() {
     loginButton.classList.remove('hide');
@@ -32,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function updateAllOrders() {
     getAllOrders().then(function(data) {
-      globalAllOrders = adjustArrayOfObject(data, 'id')
+        globalAllOrders = adjustArrayOfObject(data, 'id')
     }, errorCather);
   }
 
@@ -96,6 +111,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  function setDateLastVisit() {
+    port.postMessage({
+      name: 'setDateLastVisit',
+      dateOfLastVisit: Date.now()
+    });
+  }
+
   /**
    * Show message with text Saved in top right corner
    * @param message
@@ -134,7 +156,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     return new Promise(function(resolve, reject) {
       TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/user/' + userId).then(function(data) {
-        TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/orders?search=team==' + data.tocat_team.name + ' completed != 1')
+        TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/orders?limit=9999999&search=team==' + encodeURIComponent(data.tocat_team.name) + ' completed = 0&sorted_by=name')
           .then(function (data){
             resolve(data);
           }, errorCather);
@@ -142,6 +164,32 @@ document.addEventListener('DOMContentLoaded', function() {
         reject(err);
       });
     });
+  }
+
+  /**
+   *
+   * @returns {*}
+   */
+  function getACL(){
+    return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/acl').then(function(AClList) {
+      globalReceivedACL = AClList;
+      console.log('AClList ', AClList);
+      // globalReceivedACL = ['modify_accepted','modify_resolver','modify_budgets','show_budgets','show_issues','show_aggregated_info','can_request_review','can_review_task','set_expenses','remove_expenses'];
+    });
+  }
+
+  /**
+   *
+   * @param accessString
+   * @returns {number|Number}
+   */
+  function checkAccessControl(accessString) {
+    if (!accessString) {
+      console.error('accessString is empty');
+      return;
+    }
+
+    return globalReceivedACL.indexOf(accessString) + 1;
   }
 
   /**
@@ -156,7 +204,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     return new Promise(function(resolve, reject) {
-      TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/order/' + orderId).then(function(order) {
+      getOrder(orderId).then(function(order) {
         TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users?search=role=Developer team=' + order.team.name)
           .then(function (data){
             resolve(data);
@@ -224,6 +272,70 @@ document.addEventListener('DOMContentLoaded', function() {
   function setAcceptedStatusOfTask(value) {
     var checkboxAccepted = document.getElementById('checkbox-accepted');
     checkboxAccepted.checked = value;
+
+    if (checkAccessControl(TASK_ACL.MODIFY_ACCEPTED)) {
+      checkboxAccepted.disabled = false;
+    } else {
+      checkboxAccepted.disabled = true;
+    }
+  }
+
+  function disableSelectResolverBox() {
+    selectResolver.disabled = true;
+  }
+
+  function enableSelectResolverBox() {
+    selectResolver.disabled = false;
+  }
+
+  function disableSelectOrderEditability() {
+    if (editableGrid) {
+      editableGrid.columns[0].editable = false;
+    }
+  }
+
+  function enableSelectOrderEditability() {
+    if (editableGrid) {
+      editableGrid.columns[0].editable = true;
+    }
+  }
+
+  function disableTicketBudgetEditability() {
+    if (editableGrid) {
+      editableGrid.columns[2].editable = false;
+    }
+  }
+
+  function enableTicketBudgetEditability() {
+    if (editableGrid) {
+      editableGrid.columns[2].editable = true;
+    }
+  }
+
+  function disableAddButton() {
+    addOrderBtn.disabled = true;
+  }
+
+  function enableAddButton() {
+    addOrderBtn.disabled = false;
+  }
+
+  function checkPermission() {
+    if (!TOCAT_TOOLS.isEmptyObject(task)) {
+      if (task.expenses) {
+        disableAddButton();
+        disableSelectResolverBox();
+        disableSelectOrderEditability();
+        disableTicketBudgetEditability();
+      } else {
+        if (checkAccessControl(TASK_ACL.MODIFY_BUDGETS) && checkAccessControl(TASK_ACL.MODIFY_RESOLVER)) {
+          enableAddButton();
+          enableSelectResolverBox();
+          enableSelectOrderEditability();
+          enableTicketBudgetEditability();
+        }
+      }
+    }
   }
 
   function setExpenseStatusOfTask(value) {
@@ -252,23 +364,37 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function setExpensesStatus(task) {
-    return TOCAT_TOOLS.postJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/expenses').then(() => {}, (err) => {
+    return TOCAT_TOOLS.postJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/expenses').then(function () {
+      task.expenses = true;
+    }, (err) => {
       checkboxExpense.checked = false;
       errorCather(err);
     });
   }
 
   function rmExpensesStatus(task) {
-    return TOCAT_TOOLS.deleteJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/expenses');
+    return TOCAT_TOOLS.deleteJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/expenses').then(function () {
+      task.expenses = false;
+    });
   }
 
   /**
    *
    * @returns {*}
    */
-  function getAllOrders() {
-    return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/orders?search=completed != 1');
-  }
+  var getAllOrders = (function() {
+    var storedOrders = [];
+    return function() {
+      if (!storedOrders.length) {
+        return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/orders?limit=9999999&search=completed = 0 free_budget>0&sort=name').then(function(data){
+          storedOrders = data;
+          return data;
+        });
+      } else {
+        return Promise.resolve(storedOrders);
+      }
+    }
+  })();
 
   /**
    *
@@ -284,6 +410,9 @@ document.addEventListener('DOMContentLoaded', function() {
    * @returns {*}
    */
   function getOrder(orderId) {
+    if (typeof(orderId) === 'string') {
+      orderId = orderId.split("'")[1];
+    }
     return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/order/' + orderId);
   }
 
@@ -387,8 +516,6 @@ document.addEventListener('DOMContentLoaded', function() {
   function getTicketBudget(orderId, taskId) {
     return new Promise(function(resolve, reject) {
       getBudget(taskId).then(function(data) {
-        console.log('budget ', data);
-        console.log('orderId ', orderId);
         if (data.budget) {
           for (var i = 0 ; i < data.budget.length ; i++) {
             if (data.budget[i].order_id == orderId) {
@@ -418,7 +545,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function adjustAllOrders(allOrders) {
     var result = {};
     for (var i = 0 ; i < allOrders.length ; i++) {
-      result[allOrders[i].id] = allOrders[i].name;
+      result["'" + allOrders[i].id + "'"] = allOrders[i].name;
     }
     return result;
   }
@@ -435,9 +562,9 @@ document.addEventListener('DOMContentLoaded', function() {
       for (var j = 0 ; j < budget.length ; j ++) {
         if (taskOrders[i].id == budget[j].order_id) {
           result.push({
-            id: taskOrders[i].id,
+            id: "'" + taskOrders[i].id + "'",
             values: {
-              order: taskOrders[i].id,
+              order: "'" + taskOrders[i].id + "'",
               "budget_left": taskOrders[i].free_budget,
               "ticket_budget": budget[j].budget,
               "paid": taskOrders[i].paid
@@ -471,6 +598,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (colIdx === 2) {
           var orderId = editableGrid.getValueAt(rowIdx, 0);
           if (orderId !== 'Select') {
+            orderId = parseInt(orderId.split("'")[1]);
+
+            if (globalAllOrders[orderId]) {
+              var freeBudget = globalAllOrders[orderId].free_budget,
+                rest = freeBudget - parseInt(newValue, 10);
+              if (rest > 0) {
+                editableGrid.setValueAt(rowIdx, 1, rest);
+              }
+            }
+
             if (!TOCAT_TOOLS.isEmptyObject(task)) {
               updateOrders({
                 order_id: parseInt(orderId, 10),
@@ -514,6 +651,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
           getOrder(newValue).then(function(data) {
             editableGrid.setValueAt(rowIdx, 1, data.free_budget);
+            editableGrid.setValueAt(rowIdx, 3, data.paid);
           });
           if (!TOCAT_TOOLS.isEmptyObject(task)) {
             getTicketBudget(newValue, task.id).then(function(data) {
@@ -535,17 +673,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 options = getAdjustedFreeOrders(editableGrid, globalAllOrders, selectedValues);
               }
 
-              console.log('edit options in getOptionValuesForEdit', options);
               return options;
             },
             getOptionValuesForRender: function(grid, column, rowIndex) {
               var adjustedOrders = {};
 
-              console.log('globalPotentialOrders in getOptionValuesForRender', globalPotentialOrders);
               if (globalPotentialOrders) {
                 for (var prop in globalPotentialOrders) {
                   if (globalPotentialOrders.hasOwnProperty(prop)) {
-                    adjustedOrders[globalPotentialOrders[prop].id] = globalPotentialOrders[prop].name;
+                    adjustedOrders[globalPotentialOrders[prop].id ] = globalPotentialOrders[prop].name;
                   }
                 }
               } else {
@@ -556,7 +692,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
               }
 
-              console.log('adjustedOrders in getOptionValuesForRender', adjustedOrders);
               return adjustedOrders;
             }
           }));
@@ -567,37 +702,49 @@ document.addEventListener('DOMContentLoaded', function() {
     editableGrid.setCellRenderer('action', new CellRenderer({render: function(cell, value) {
       var guidId = TOCAT_TOOLS.guidGenerator();
 
-      cell.innerHTML = '<span class="pointer" id="' + guidId + '"><button type="button" class="btn btn-sm btn-danger"><em class="fa fa-trash"></em></button></span>';
+      var disabled = checkAccessControl(TASK_ACL.MODIFY_BUDGETS) ? '' : 'disabled';
+      cell.innerHTML = '<span class="pointer" id="' + guidId + '"><button type="button" class="btn btn-sm btn-danger" ' + disabled + '><em class="fa fa-trash"></em></button></span>';
       var deleteButton = document.getElementById(guidId);
       deleteButton.addEventListener('click', function() {
-        bootbox.confirm('Are you sure you want to remove order?', function(result) {
-          if (result) {
-            var orderId = editableGrid.getValueAt(cell.rowIndex, 0);
-            // Select means empty order
-            if (orderId !== 'Select') {
-              rmOrder(parseInt(orderId, 10), task).then(function() {
+        if (!task.expenses && checkAccessControl(TASK_ACL.MODIFY_BUDGETS)) {
+          bootbox.confirm('Are you sure you want to remove order?', function(result) {
+            if (result) {
+              var orderId = editableGrid.getValueAt(cell.rowIndex, 0);
+              // Select means empty order
+              if (orderId !== 'Select') {
+                orderId = parseInt(orderId.split("'")[1], 10);
+                rmOrder(parseInt(orderId, 10), task).then(function() {
+                  editableGrid.remove(cell.rowIndex);
+                  if (!editableGrid.getTotalRowCount()) {
+                    hideTable();
+                    showOrderText('No orders yet, please add one');
+                  }
+                  refreshTask();
+                  getCurrentUrl().then(function(data) {
+                    TOCAT_TOOLS.updateIcon(data);
+                  }, errorCather);
+                }, function(err) {
+                  showErrors(err.errors);
+                });
+              } else {
                 editableGrid.remove(cell.rowIndex);
                 if (!editableGrid.getTotalRowCount()) {
                   hideTable();
                   showOrderText('No orders yet, please add one');
                 }
-                refreshTask();
-                getCurrentUrl().then(function(data) {
-                  TOCAT_TOOLS.updateIcon(data);
-                }, errorCather);
-              }, function(err) {
-                showErrors(err.errors);
-              });
-            } else {
-              editableGrid.remove(cell.rowIndex);
-              if (!editableGrid.getTotalRowCount()) {
-                hideTable();
-                showOrderText('No orders yet, please add one');
               }
             }
-          }
-        });
+          });
+        } else {
+          showErrors(["You don't have permission to remove this order"]);
+        }
       });
+
+      /*deleteButton.addEventListener('mouseover', function(){
+        if (!checkAccessControl(TASK_ACL.MODIFY_BUDGETS)) {
+          deleteButton.children[0].disabled = true;
+        }
+      });*/
 
     }}));
 
@@ -606,25 +753,38 @@ document.addEventListener('DOMContentLoaded', function() {
       cell.innerHTML = text;
     }}));
 
+    editableGrid.setCellRenderer('budget_left', new CellRenderer({render: function(cell, value){
+      cell.innerHTML = value;
+    }}));
+
     editableGrid.setCellRenderer('ticket_budget', new CellRenderer({render: function(cell, value) {
-      cell.innerHTML = value + '<em class="icon-pencil icon-pencil-format"></em>';
+      var disabledPointer = checkAccessControl(TASK_ACL.MODIFY_BUDGETS) ? '' : 'disabled-pointer';
+
+      cell.innerHTML = '<div class="' + disabledPointer + '">' + value + '<em class="icon-pencil icon-pencil-format"></em></div>';
     }}));
 
     editableGrid.setCellRenderer('order', new CellRenderer({render: function(cell, value) {
+      var disabledPointer = checkAccessControl(TASK_ACL.MODIFY_BUDGETS) ? '' : 'disabled-pointer';
+
       if (value === 'Select') {
-        cell.innerHTML = value+ '<em class="icon-pencil icon-pencil-format mr-5"></em>';
+        cell.innerHTML = '<div class="' + disabledPointer + '">' + value + '<em class="icon-pencil icon-pencil-format mr-5"></em></div>';
+        return;
       }
 
-      if (TOCAT_TOOLS.isEmptyObject(globalPotentialOrders) && globalAllOrders[value]) {
-        cell.innerHTML = globalAllOrders[value].name + '<em class="icon-pencil icon-pencil-format mr-5"></em>';
+      parsedValue = parseInt(value.split("'")[1], 10);
+      if (TOCAT_TOOLS.isEmptyObject(globalPotentialOrders) && globalAllOrders[parsedValue]) {
+        cell.innerHTML = '<div class="' + disabledPointer + '">' + globalAllOrders[parsedValue].name + '<em class="icon-pencil icon-pencil-format mr-5"></em></div>';
       }
 
-      if (!TOCAT_TOOLS.isEmptyObject(globalPotentialOrders) && globalPotentialOrders[value]) {
-        cell.innerHTML = globalPotentialOrders[value].name + '<em class="icon-pencil icon-pencil-format mr-5"></em>';
+      if (!TOCAT_TOOLS.isEmptyObject(globalPotentialOrders) && globalPotentialOrders[parsedValue]) {
+        cell.innerHTML = '<div class="' + disabledPointer + '">' + globalPotentialOrders[parsedValue].name + '<em class="icon-pencil icon-pencil-format mr-5"></em></div>';
       }
     }}));
 
     editableGrid.renderGrid("tablecontent", "ordersGrid");
+
+    window.editableGrid = editableGrid;
+
     // ugly solution
     var orders = document.getElementsByClassName('editablegrid-order');
     for (var i = 0 ; i < orders.length ; i++) {
@@ -640,8 +800,8 @@ document.addEventListener('DOMContentLoaded', function() {
    * @returns {Array}
    */
   function getAllSelectedValuesWithoutOne(editableGrid, notThisId) {
-    var rowCount = editableGrid.getTotalRowCount();
-    var results = [];
+    var rowCount = editableGrid.getTotalRowCount(),
+      results = [];
 
     for (var i = 0 ; i < rowCount ; i++) {
       var order = editableGrid.getValueAt(i, 0);
@@ -649,11 +809,12 @@ document.addEventListener('DOMContentLoaded', function() {
         continue;
       }
 
-      if (parseInt(order, 10) == parseInt(notThisId, 10)) {
+      if (order == notThisId) {
         continue;
       }
 
-      results.push(parseInt(editableGrid.getValueAt(i, 0)));
+      order = typeof order == "string" ? parseInt(order.split("'")[1], 10) : order;
+      results.push(order);
     }
 
     return results;
@@ -670,6 +831,32 @@ document.addEventListener('DOMContentLoaded', function() {
     return results;
   }
 
+  function sortObject(obj) {
+    var arr = [],
+      prop,
+      result = {};
+
+    for (prop in obj) {
+      if (obj.hasOwnProperty(prop)) {
+        arr.push({
+          'key': prop,
+          'value': obj[prop]
+        });
+      }
+    }
+    arr.sort(function(a, b) {
+      var x = a.value.toLowerCase();
+      var y = b.value.toLowerCase();
+      return x < y ? -1 : x > y ? 1 : 0;
+    });
+
+    arr.forEach(function(element) {
+      result["'" + element.key + "'"] = element.value;
+    });
+
+    return result;
+  }
+
   /**
    *
    * @param editableGrid
@@ -678,16 +865,16 @@ document.addEventListener('DOMContentLoaded', function() {
    * @returns {*}
    */
   function getAdjustedFreeOrders(editableGrid, allOrders, notThisId) {
-    var usedOrders = getAllSelectedValuesWithoutOne(editableGrid, notThisId);
-    console.log('all selected values without one', usedOrders);
+    var usedOrders = getAllSelectedValuesWithoutOne(editableGrid, notThisId);;
     var freeOrders = getFreeOrders(allOrders, usedOrders);
-    console.log('all free values', freeOrders);
     var adjustedOrders = {}
     for (var prop in freeOrders) {
       if (freeOrders.hasOwnProperty(prop)) {
         adjustedOrders[freeOrders[prop].id] = freeOrders[prop].name;
       }
     }
+
+    adjustedOrders = sortObject(adjustedOrders);
     return adjustedOrders;
   }
 
@@ -698,10 +885,13 @@ document.addEventListener('DOMContentLoaded', function() {
    * @param budget
    */
   function initTable(allOrders, taskOrders, budget) {
-
     if (taskOrders.length) {
       var data = adjustTaskOrders(taskOrders, budget);
       renderTable(data, allOrders);
+      checkPermission();
+      setAccessabilityOfExpenseCheckbox();
+      setAccessabilityOfSelectResolver();
+      setAccessabilityOfChangeOrders();
     } else {
       showOrderText('No orders yet, please add one');
     }
@@ -737,23 +927,121 @@ document.addEventListener('DOMContentLoaded', function() {
     })
   }
 
+  /*function getMyTeam() {
+    return new Promise(function(resolve, reject) {
+      TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users/me').then(function(me) {
+        TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users?search=role=Developer team = ' + me.team.name).then(function(users){
+          resolve(users);
+        }, function(err) {
+          reject(err);
+        })
+      }, function(err){
+        reject(err)
+      })
+    });
+  }*/
+
   /**
    * change select box with resolvers according to users
    * @param users
+   * @param flagSelected
    */
   function rebuildSelect(users, flagSelected) {
-    var selectResolver = document.getElementById('selectResolver');
-    var oldValue = selectResolver.value;
+    // store my team in global var an then check it
+    var optGroupMy = document.createElement('OPTGROUP'),
+      optGroupNotMy = document.createElement('OPTGROUP');
 
-    selectResolver.options.length = 0;
+    optGroupMy.label = 'My Team';
+    optGroupNotMy.label = 'Other Users';
 
-    selectResolver.options.add(new Option('select', 0));
-    for (var i = 0; i < users.length ; i++) {
+    /*if (checkAccessControl(TASK_ACL.MODIFY_RESOLVER)) {
+      getMyTeam().then(function(myTeam) {
+        var otherUsers = _.differenceWith(users, myTeam, _.isEqual);
+        otherUsers = _.sortBy(otherUsers, 'name');
+        myTeam = _.sortBy(myTeam, 'name');
+
+        var selectResolver = document.getElementById('selectResolver'),
+          oldValue = selectResolver.value,
+          opts = selectResolver.options;
+
+        selectResolver.options.add(new Option('select', 0));
+        if (myTeam.length) {
+          selectResolver.appendChild(optGroupMy);
+        }
+        for (var i = 0; i < myTeam.length ; i++) {
+          selectResolver.options.add(new Option(myTeam[i].name, myTeam[i].id));
+        }
+
+        if (otherUsers.length) {
+          selectResolver.appendChild(optGroupNotMy);
+        }
+        for (var j = 0; j < otherUsers.length ; j++) {
+          selectResolver.options.add(new Option(otherUsers[j].name, otherUsers[j].id));
+        }
+
+        if (flagSelected) {
+          selectResolver.value = oldValue;
+        }
+
+      }, errorCather);
+    } else {*/
+      var selectResolver = document.getElementById('selectResolver'),
+        oldValue = selectResolver.value,
+        opts = selectResolver.options;
+
+      selectResolver.options.add(new Option('select', 0));
+      for (var i = 0; i < users.length ; i++) {
         selectResolver.options.add(new Option(users[i].name, users[i].id));
+      }
+
+      if (flagSelected) {
+        selectResolver.value = oldValue;
+      }
+    /*}*/
+  }
+
+  function setAccessabilityOfSelectResolver() {
+    if (checkAccessControl(TASK_ACL.MODIFY_RESOLVER)) {
+      selectResolver.disabled = false;
+    } else {
+      selectResolver.disabled = true;
+    }
+  }
+
+  function setAccessabilityOfChangeOrders() {
+    if (!checkAccessControl(TASK_ACL.MODIFY_BUDGETS)) {
+      disableAddButton();
+      disableSelectResolverBox();
+      disableSelectOrderEditability();
+      disableTicketBudgetEditability();
+    } else {
+      enableAddButton();
+      enableSelectResolverBox();
+      enableSelectOrderEditability();
+      enableTicketBudgetEditability();
+    }
+  }
+
+  function setAccessabilityOfOrders() {
+    var ordersWrapper = document.getElementById('content-wrapper');
+    if (checkAccessControl(TASK_ACL.SHOW_BUDGETS)) {
+      ordersWrapper.style.display = '';
+    } else {
+      ordersWrapper.style.display = 'none';
+    }
+  }
+
+  function setAccessabilityOfExpenseCheckbox() {
+    checkboxExpense.disabled = true;
+    if (checkAccessControl(TASK_ACL.REMOVE_EXPENSES) && checkAccessControl(TASK_ACL.SET_EXPENSES)) {
+      checkboxExpense.disabled = false;
     }
 
-    if (flagSelected) {
-      selectResolver.value = oldValue;
+    if (checkboxExpense.checked && checkAccessControl(TASK_ACL.REMOVE_EXPENSES)) {
+      checkboxExpense.disabled = false;
+    }
+    if (!checkboxExpense.checked && checkAccessControl(TASK_ACL.SET_EXPENSES)) {
+      checkboxExpense.disabled = false;
     }
   }
 
@@ -766,6 +1054,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setPaidStatusOfTask(task.paid);
     setAcceptedStatusOfTask(task.accepted);
     setExpenseStatusOfTask(task.expenses);
+
     if (task.resolver && task.resolver.id) {
       setResolverOfTask(task.resolver.id);
     }
@@ -781,16 +1070,22 @@ document.addEventListener('DOMContentLoaded', function() {
         // todo: redo it
         // fix on fix
         if (task && task.resolver && task.resolver.id) {
-          getPotentialOrders(task.resolver.id).then(function(data) {
-            globalPotentialOrders = adjustArrayOfObject(data, 'id');
-            Promise.all([getAllOrders(), getBudget(task.id)]).then(function(data) {
+          if (checkAccessControl(TASK_ACL.MODIFY_BUDGETS)) {
+            getPotentialOrders(task.resolver.id).then(function(data) {
+              globalPotentialOrders = adjustArrayOfObject(data, 'id');
+              if (checkAccessControl(TASK_ACL.MODIFY_BUDGETS)) {
+                Promise.all([getAllOrders(), getBudget(task.id)]).then(function(data) {
+                  initTable(data[0], task.orders, data[1].budget);
+                }, errorCather);
+              }
+            });
+          }
+        } else {
+          if (checkAccessControl(TASK_ACL.MODIFY_BUDGETS)) {
+            Promise.all([getAllOrders(), getBudget(task.id)]).then(function (data) {
               initTable(data[0], task.orders, data[1].budget);
             }, errorCather);
-          })
-        } else {
-          Promise.all([getAllOrders(), getBudget(task.id)]).then(function(data) {
-            initTable(data[0], task.orders, data[1].budget);
-          }, errorCather);
+          }
         }
 
       } else {
@@ -810,7 +1105,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function getCurrentUrl() {
     return new Promise(function(resolve, reject) {
       chrome.tabs.query({'active': true, 'lastFocusedWindow': true}, function (tabs) {
-        resolve(tabs[0].url.split('?')[0]);
+        resolve(tabs[0].url);
       });
     });
   }
@@ -822,19 +1117,17 @@ document.addEventListener('DOMContentLoaded', function() {
   function getCurrentTask() {
     return new Promise(function(resolve, reject) {
       getCurrentUrl().then(function(data) {
-        TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/tasks/?search=external_id=' + data).then(function(data) {
+        TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/tasks/?search=external_id=' + encodeURIComponent(data)).then(function(data) {
           if (data.length) {
             // todo: rm it from here
             rebuildSelect(data[0].potential_resolvers);
             TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/task/' + data[0].id).then(function(receivedTask) {
-              console.log('Received task in getCurrentTask()', receivedTask);
               resolve(receivedTask);
             });
           } else {
             // todo: rm it from here
             getAllDevelopers().then(function(data) {
               rebuildSelect(data);
-              console.log('Received task in getCurrentTask()', {});
               resolve({});
             }, function(err) {
               reject(err);
@@ -851,7 +1144,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function renderContent() {
     init();
-    updateAllOrders();
+    if (checkAccessControl(TASK_ACL.MODIFY_BUDGETS)) {
+      updateAllOrders();
+    }
 
     addOrderBtn.addEventListener('click', function() {
       if (editableGrid) {
@@ -903,8 +1198,9 @@ document.addEventListener('DOMContentLoaded', function() {
           }
           showInformation('The new task has been created');
           // maybe rm it from here
-          chrome.browserAction.setBadgeText({text: '0'});
+          chrome.browserAction.setBadgeText({text: '—'});
         }, errorCather);
+        return;
       }
 
       if (parseInt(selectedResolver.value, 10)) {
@@ -920,7 +1216,6 @@ document.addEventListener('DOMContentLoaded', function() {
           showInformation('rm resolver');
         }, errorCather);
         globalPotentialOrders = null;
-        console.log('globalPotentialOrders ', globalPotentialOrders);
       }
     });
 
@@ -949,16 +1244,24 @@ document.addEventListener('DOMContentLoaded', function() {
         createNewTask().then(function(data) {
           if (checkboxExpense.checked) {
             setExpensesStatus(data);
+            setAccessabilityOfExpenseCheckbox();
           } else {
             rmExpensesStatus(data);
+            setAccessabilityOfExpenseCheckbox();
           }
           showInformation('The new task has been created');
         }, errorCather);
       } else {
         if (checkboxExpense.checked) {
-          setExpensesStatus(task);
+          setExpensesStatus(task).then(function() {
+            checkPermission();
+            setAccessabilityOfExpenseCheckbox();
+          });
         } else {
-          rmExpensesStatus(task);
+          rmExpensesStatus(task).then(function() {
+            checkPermission();
+            setAccessabilityOfExpenseCheckbox();
+          });
         }
         showInformation('The new task has been created');
       }
@@ -973,13 +1276,28 @@ document.addEventListener('DOMContentLoaded', function() {
     name: 'getToken'
   });
 
+  setDateLastVisit();
+
   port.onMessage.addListener(function(msg) {
     switch (msg.name) {
       case 'getToken':
         if (msg.token) {
           TOCAT_TOOLS.setTokenHeader(msg.token);
-          renderContent();
-          showContent();
+          getACL().then(function () {
+            if (checkAccessControl(TASK_ACL.SHOW_AGGREGATED_INFO)) {
+              renderContent();
+              setAccessabilityOfOrders();
+              setAccessabilityOfExpenseCheckbox();
+              setAccessabilityOfSelectResolver();
+              showContent();
+            } else {
+              document.body.style.height = '200px';
+              showErrors(["you don't have permission"]);
+            }
+          }, function() {
+            document.body.style.height = '200px';
+            showErrors(["you don't have permission"]);
+          });
         } else {
           hideSpinner();
           showLoginButton();
