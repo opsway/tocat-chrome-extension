@@ -47,6 +47,7 @@ var TOCAT_TOOLS = (function() {
   }
 
   function getJSONRequest(url) {
+    console.log('GET request: ', url);
     return new Promise(function(resolve, reject) {
       var xhr = new XMLHttpRequest();
       counterRequest += 1;
@@ -71,6 +72,7 @@ var TOCAT_TOOLS = (function() {
   }
 
   function deleteJSONRequest(url) {
+    console.log('DELETE request: ', url);
     return new Promise(function(resolve, reject) {
       var xhr = new XMLHttpRequest();
       counterRequest += 1;
@@ -95,6 +97,7 @@ var TOCAT_TOOLS = (function() {
   }
 
   function postJSONRequest(url, obj) {
+    console.log('POST request: ', url);
     return new Promise(function(resolve, reject) {
       var xhr = new XMLHttpRequest();
       counterRequest += 1;
@@ -138,7 +141,7 @@ var TOCAT_TOOLS = (function() {
    * @param url
    */
   function updateIcon(url) {
-    TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/tasks/?search=external_id=' + url.split('?')[0]).then(function(data) {
+    TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/tasks/?search=external_id=' + encodeURIComponent(url)).then(function(data) {
       var orders = [];
       var totalBudget = null;
       if (data.length) {
