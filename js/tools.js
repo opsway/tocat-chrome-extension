@@ -119,21 +119,6 @@ var TOCAT_TOOLS = (function() {
     });
   }
 
-  // todo: rm this function, use _.isEmpty()
-  /**
-   *
-   * @param obj
-   * @returns {boolean}
-   */
-  function isEmptyObject(obj) {
-    for(var prop in obj) {
-      if(obj.hasOwnProperty(prop))
-        return false;
-    }
-
-    return true;
-  }
-
   /**
    *
    * @param url
@@ -189,7 +174,6 @@ var TOCAT_TOOLS = (function() {
     postJSON: postJSONRequest,
     urlTocat: urlTocat,
     deleteJSON: deleteJSONRequest,
-    isEmptyObject: isEmptyObject,
     updateIcon: updateIcon,
     guidGenerator: guidGenerator,
     setTokenHeader: setTokenHeader
