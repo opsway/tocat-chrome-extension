@@ -9,6 +9,7 @@ var clean = require('gulp-clean');
 gulp.task('concat-scripts', function() {
   return gulp.src([
     './js/jquery/jquery-1.12.4.js',
+    './js/lodash/lodash-4.13.1.js',
     './js/bootstrap.js',
     './js/editableGrid/editablegrid.js',
     './js/editableGrid/editablegrid_charts.js',
