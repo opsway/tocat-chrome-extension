@@ -24,7 +24,9 @@ document.addEventListener('DOMContentLoaded', function() {
       SET_EXPENSES: 'set_expenses', //user can set "expenses" flag of the task',
       REMOVE_EXPENSES: 'remove_expenses' //user can remove "expenses" flag of the task'
     },
-    globalReceivedACL = [];
+    globalReceivedACL = [],
+    bkg = chrome.extension.getBackgroundPage(),
+    bcl = bkg.console.log;
 
   function showLoginButton() {
     loginButton.classList.remove('hide');
@@ -45,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function updateAllOrders() {
     getAllOrders().then(function(data) {
-      globalAllOrders = adjustArrayOfObject(data, 'id')
+        globalAllOrders = adjustArrayOfObject(data, 'id')
     }, errorCather);
   }
 
@@ -170,8 +172,8 @@ document.addEventListener('DOMContentLoaded', function() {
    */
   function getACL(){
     return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/acl').then(function(AClList) {
-      console.log('AClList ', AClList);
       globalReceivedACL = AClList;
+      console.log('AClList ', AClList);
       // globalReceivedACL = ['modify_accepted','modify_resolver','modify_budgets','show_budgets','show_issues','show_aggregated_info','can_request_review','can_review_task','set_expenses','remove_expenses'];
     });
   }
@@ -380,9 +382,19 @@ document.addEventListener('DOMContentLoaded', function() {
    *
    * @returns {*}
    */
-  function getAllOrders() {
-    return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/orders?limit=9999999&search=completed = 0 free_budget>0&sort=name');
-  }
+  var getAllOrders = (function() {
+    var storedOrders = [];
+    return function() {
+      if (!storedOrders.length) {
+        return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/orders?limit=9999999&search=completed = 0 free_budget>0&sort=name').then(function(data){
+          storedOrders = data;
+          return data;
+        });
+      } else {
+        return Promise.resolve(storedOrders);
+      }
+    }
+  })();
 
   /**
    *
@@ -504,8 +516,6 @@ document.addEventListener('DOMContentLoaded', function() {
   function getTicketBudget(orderId, taskId) {
     return new Promise(function(resolve, reject) {
       getBudget(taskId).then(function(data) {
-        console.log('budget ', data);
-        console.log('orderId ', orderId);
         if (data.budget) {
           for (var i = 0 ; i < data.budget.length ; i++) {
             if (data.budget[i].order_id == orderId) {
@@ -574,7 +584,6 @@ document.addEventListener('DOMContentLoaded', function() {
    */
   function renderTable(data, allOrders) {
     // todo: check are you manager
-    console.log('Rendered data in renderTable ', data);
     var metadata = [];
     metadata.push({name: "order", label: "Order", datatype: "string", editable: true});
     metadata.push({name: "budget_left", label: "Budget left", datatype: "integer", editable: false});
@@ -664,13 +673,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 options = getAdjustedFreeOrders(editableGrid, globalAllOrders, selectedValues);
               }
 
-              console.log('edit options in getOptionValuesForEdit', options);
               return options;
             },
             getOptionValuesForRender: function(grid, column, rowIndex) {
               var adjustedOrders = {};
 
-              console.log('globalPotentialOrders in getOptionValuesForRender', globalPotentialOrders);
               if (globalPotentialOrders) {
                 for (var prop in globalPotentialOrders) {
                   if (globalPotentialOrders.hasOwnProperty(prop)) {
@@ -685,7 +692,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
               }
 
-              console.log('adjustedOrders in getOptionValuesForRender', adjustedOrders);
               return adjustedOrders;
             }
           }));
@@ -859,10 +865,8 @@ document.addEventListener('DOMContentLoaded', function() {
    * @returns {*}
    */
   function getAdjustedFreeOrders(editableGrid, allOrders, notThisId) {
-    var usedOrders = getAllSelectedValuesWithoutOne(editableGrid, notThisId);
-    console.log('usedOrders ', usedOrders);
+    var usedOrders = getAllSelectedValuesWithoutOne(editableGrid, notThisId);;
     var freeOrders = getFreeOrders(allOrders, usedOrders);
-    console.log('freeOrders ', freeOrders);
     var adjustedOrders = {}
     for (var prop in freeOrders) {
       if (freeOrders.hasOwnProperty(prop)) {
@@ -923,28 +927,80 @@ document.addEventListener('DOMContentLoaded', function() {
     })
   }
 
+  /*function getMyTeam() {
+    return new Promise(function(resolve, reject) {
+      TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users/me').then(function(me) {
+        TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users?search=role=Developer team = ' + me.team.name).then(function(users){
+          resolve(users);
+        }, function(err) {
+          reject(err);
+        })
+      }, function(err){
+        reject(err)
+      })
+    });
+  }*/
+
   /**
    * change select box with resolvers according to users
    * @param users
+   * @param flagSelected
    */
   function rebuildSelect(users, flagSelected) {
-    var selectResolver = document.getElementById('selectResolver');
-    var oldValue = selectResolver.value;
+    // store my team in global var an then check it
+    var optGroupMy = document.createElement('OPTGROUP'),
+      optGroupNotMy = document.createElement('OPTGROUP');
 
-    selectResolver.options.length = 0;
+    optGroupMy.label = 'My Team';
+    optGroupNotMy.label = 'Other Users';
 
-    selectResolver.options.add(new Option('select', 0));
-    for (var i = 0; i < users.length ; i++) {
+    /*if (checkAccessControl(TASK_ACL.MODIFY_RESOLVER)) {
+      getMyTeam().then(function(myTeam) {
+        var otherUsers = _.differenceWith(users, myTeam, _.isEqual);
+        otherUsers = _.sortBy(otherUsers, 'name');
+        myTeam = _.sortBy(myTeam, 'name');
+
+        var selectResolver = document.getElementById('selectResolver'),
+          oldValue = selectResolver.value,
+          opts = selectResolver.options;
+
+        selectResolver.options.add(new Option('select', 0));
+        if (myTeam.length) {
+          selectResolver.appendChild(optGroupMy);
+        }
+        for (var i = 0; i < myTeam.length ; i++) {
+          selectResolver.options.add(new Option(myTeam[i].name, myTeam[i].id));
+        }
+
+        if (otherUsers.length) {
+          selectResolver.appendChild(optGroupNotMy);
+        }
+        for (var j = 0; j < otherUsers.length ; j++) {
+          selectResolver.options.add(new Option(otherUsers[j].name, otherUsers[j].id));
+        }
+
+        if (flagSelected) {
+          selectResolver.value = oldValue;
+        }
+
+      }, errorCather);
+    } else {*/
+      var selectResolver = document.getElementById('selectResolver'),
+        oldValue = selectResolver.value,
+        opts = selectResolver.options;
+
+      selectResolver.options.add(new Option('select', 0));
+      for (var i = 0; i < users.length ; i++) {
         selectResolver.options.add(new Option(users[i].name, users[i].id));
-    }
+      }
 
-    if (flagSelected) {
-      selectResolver.value = oldValue;
-    }
+      if (flagSelected) {
+        selectResolver.value = oldValue;
+      }
+    /*}*/
   }
 
   function setAccessabilityOfSelectResolver() {
-    console.log('checkAccessControl(TASK_ACL.MODIFY_RESOLVER) ', checkAccessControl(TASK_ACL.MODIFY_RESOLVER));
     if (checkAccessControl(TASK_ACL.MODIFY_RESOLVER)) {
       selectResolver.disabled = false;
     } else {
@@ -1014,16 +1070,22 @@ document.addEventListener('DOMContentLoaded', function() {
         // todo: redo it
         // fix on fix
         if (task && task.resolver && task.resolver.id) {
-          getPotentialOrders(task.resolver.id).then(function(data) {
-            globalPotentialOrders = adjustArrayOfObject(data, 'id');
-            Promise.all([getAllOrders(), getBudget(task.id)]).then(function(data) {
+          if (checkAccessControl(TASK_ACL.MODIFY_BUDGETS)) {
+            getPotentialOrders(task.resolver.id).then(function(data) {
+              globalPotentialOrders = adjustArrayOfObject(data, 'id');
+              if (checkAccessControl(TASK_ACL.MODIFY_BUDGETS)) {
+                Promise.all([getAllOrders(), getBudget(task.id)]).then(function(data) {
+                  initTable(data[0], task.orders, data[1].budget);
+                }, errorCather);
+              }
+            });
+          }
+        } else {
+          if (checkAccessControl(TASK_ACL.MODIFY_BUDGETS)) {
+            Promise.all([getAllOrders(), getBudget(task.id)]).then(function (data) {
               initTable(data[0], task.orders, data[1].budget);
             }, errorCather);
-          })
-        } else {
-          Promise.all([getAllOrders(), getBudget(task.id)]).then(function(data) {
-            initTable(data[0], task.orders, data[1].budget);
-          }, errorCather);
+          }
         }
 
       } else {
@@ -1043,7 +1105,6 @@ document.addEventListener('DOMContentLoaded', function() {
   function getCurrentUrl() {
     return new Promise(function(resolve, reject) {
       chrome.tabs.query({'active': true, 'lastFocusedWindow': true}, function (tabs) {
-        console.log('Current url in getCurrentUrl() ', tabs[0].url.split('#')[0]);
         resolve(tabs[0].url);
       });
     });
@@ -1061,14 +1122,12 @@ document.addEventListener('DOMContentLoaded', function() {
             // todo: rm it from here
             rebuildSelect(data[0].potential_resolvers);
             TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/task/' + data[0].id).then(function(receivedTask) {
-              console.log('Received task in getCurrentTask()', receivedTask);
               resolve(receivedTask);
             });
           } else {
             // todo: rm it from here
             getAllDevelopers().then(function(data) {
               rebuildSelect(data);
-              console.log('Received task in getCurrentTask()', {});
               resolve({});
             }, function(err) {
               reject(err);
@@ -1085,7 +1144,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function renderContent() {
     init();
-    updateAllOrders();
+    if (checkAccessControl(TASK_ACL.MODIFY_BUDGETS)) {
+      updateAllOrders();
+    }
 
     addOrderBtn.addEventListener('click', function() {
       if (editableGrid) {
@@ -1155,7 +1216,6 @@ document.addEventListener('DOMContentLoaded', function() {
           showInformation('rm resolver');
         }, errorCather);
         globalPotentialOrders = null;
-        console.log('globalPotentialOrders ', globalPotentialOrders);
       }
     });
 
