@@ -947,6 +947,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function getMyTeam() {
     return new Promise(function(resolve, reject) {
       TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users/me').then(function(me) {
+        console.log('me ', me);
         TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users?search=role=Developer team = ' + me.tocat_team.name).then(function(users){
           resolve(users);
         }, function(err) {
@@ -971,7 +972,7 @@ document.addEventListener('DOMContentLoaded', function() {
     optGroupMy.label = 'My Team';
     optGroupNotMy.label = 'Other Users';
 
-    if (!checkAccessControl(TASK_ACL.MODIFY_RESOLVER)) {
+    if (checkAccessControl(TASK_ACL.MODIFY_RESOLVER)) {
       getMyTeam().then(function(myTeam) {
         var otherUsers = _.differenceWith(users, myTeam, function(user, myTeamPlayer) {
           return user.id === myTeamPlayer.id;
@@ -1240,6 +1241,7 @@ document.addEventListener('DOMContentLoaded', function() {
     checkboxAccepted.addEventListener('change', function() {
       if (TOCAT_TOOLS.isEmptyObject(task)) {
         createNewTask().then(function(data) {
+          task = data;
           if (checkboxAccepted.checked) {
             setAcceptStatus(data);
           } else {
@@ -1260,6 +1262,7 @@ document.addEventListener('DOMContentLoaded', function() {
     checkboxExpense.addEventListener('change', function() {
       if (TOCAT_TOOLS.isEmptyObject(task)) {
         createNewTask().then(function(data) {
+          task = data;
           if (checkboxExpense.checked) {
             setExpensesStatus(data);
             setAccessabilityOfExpenseCheckbox();
