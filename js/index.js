@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', function() {
     globalAllOrders = null,
     globalPotentialOrders = null,
     loginButton = document.getElementById('loginButton'),
+    closeButton = document.getElementById('close-button'),
+    logoutButton = document.getElementById('logout-button'),
     content = document.getElementById('content'),
     TASK_ACL = {
       MODIFY_ACCEPTED: 'modify_accepted', //user can request "Accept Task" (setting or removing accept flag)',
@@ -25,8 +27,32 @@ document.addEventListener('DOMContentLoaded', function() {
       REMOVE_EXPENSES: 'remove_expenses' //user can remove "expenses" flag of the task'
     },
     globalReceivedACL = [],
-    bkg = chrome.extension.getBackgroundPage(),
-    bcl = bkg.console.log;
+    bkg = chrome.extension.getBackgroundPage();
+
+  /**
+   * save protocol and domain in localStorage
+   */
+  function saveDomain() {
+    getCurrentUrl().then(function(url){
+      var domain,
+        protocol,
+        full;
+
+      domain = TOCAT_TOOLS.getDomainFromUrl(url);
+      protocol = TOCAT_TOOLS.getProtocolFromUrl(url);
+      full = protocol + '://' + domain;
+
+      TOCAT_TOOLS.saveDomain(full);
+    });
+  }
+
+  function setVersion() {
+    var manifest = chrome.runtime.getManifest(),
+      version = manifest.version,
+      place = document.getElementById('version-place');
+
+    place.innerHTML = version;
+  }
 
   function showLoginButton() {
     loginButton.classList.remove('hide');
@@ -38,6 +64,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function showContent() {
     content.classList.remove('hide');
+  }
+
+  function hideContent() {
+    content.classList.add('hide');
   }
 
   function hideSpinner() {
@@ -109,13 +139,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
       });
     }
-  }
-
-  function setDateLastVisit() {
-    port.postMessage({
-      name: 'setDateLastVisit',
-      dateOfLastVisit: Date.now()
-    });
   }
 
   /**
@@ -740,12 +763,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       });
 
-      /*deleteButton.addEventListener('mouseover', function(){
-        if (!checkAccessControl(TASK_ACL.MODIFY_BUDGETS)) {
-          deleteButton.children[0].disabled = true;
-        }
-      });*/
-
     }}));
 
     editableGrid.setCellRenderer('paid', new CellRenderer({render: function(cell, value) {
@@ -927,10 +944,11 @@ document.addEventListener('DOMContentLoaded', function() {
     })
   }
 
-  /*function getMyTeam() {
+  function getMyTeam() {
     return new Promise(function(resolve, reject) {
       TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users/me').then(function(me) {
-        TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users?search=role=Developer team = ' + me.team.name).then(function(users){
+        console.log('me ', me);
+        TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users?search=role=Developer team = ' + me.tocat_team.name).then(function(users){
           resolve(users);
         }, function(err) {
           reject(err);
@@ -939,7 +957,7 @@ document.addEventListener('DOMContentLoaded', function() {
         reject(err)
       })
     });
-  }*/
+  }
 
   /**
    * change select box with resolvers according to users
@@ -954,9 +972,11 @@ document.addEventListener('DOMContentLoaded', function() {
     optGroupMy.label = 'My Team';
     optGroupNotMy.label = 'Other Users';
 
-    /*if (checkAccessControl(TASK_ACL.MODIFY_RESOLVER)) {
+    if (checkAccessControl(TASK_ACL.MODIFY_RESOLVER)) {
       getMyTeam().then(function(myTeam) {
-        var otherUsers = _.differenceWith(users, myTeam, _.isEqual);
+        var otherUsers = _.differenceWith(users, myTeam, function(user, myTeamPlayer) {
+          return user.id === myTeamPlayer.id;
+        });
         otherUsers = _.sortBy(otherUsers, 'name');
         myTeam = _.sortBy(myTeam, 'name');
 
@@ -984,7 +1004,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
       }, errorCather);
-    } else {*/
+    } else {
       var selectResolver = document.getElementById('selectResolver'),
         oldValue = selectResolver.value,
         opts = selectResolver.options;
@@ -997,7 +1017,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (flagSelected) {
         selectResolver.value = oldValue;
       }
-    /*}*/
+    }
   }
 
   function setAccessabilityOfSelectResolver() {
@@ -1087,7 +1107,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }, errorCather);
           }
         }
-
       } else {
         // task with external_id does not exist
       }
@@ -1222,6 +1241,7 @@ document.addEventListener('DOMContentLoaded', function() {
     checkboxAccepted.addEventListener('change', function() {
       if (_.isEmpty(task)) {
         createNewTask().then(function(data) {
+          task = data;
           if (checkboxAccepted.checked) {
             setAcceptStatus(data);
           } else {
@@ -1242,6 +1262,7 @@ document.addEventListener('DOMContentLoaded', function() {
     checkboxExpense.addEventListener('change', function() {
       if (_.isEmpty(task)) {
         createNewTask().then(function(data) {
+          task = data;
           if (checkboxExpense.checked) {
             setExpensesStatus(data);
             setAccessabilityOfExpenseCheckbox();
@@ -1275,8 +1296,7 @@ document.addEventListener('DOMContentLoaded', function() {
   port.postMessage({
     name: 'getToken'
   });
-
-  setDateLastVisit();
+  saveDomain();
 
   port.onMessage.addListener(function(msg) {
     switch (msg.name) {
@@ -1290,6 +1310,7 @@ document.addEventListener('DOMContentLoaded', function() {
               setAccessabilityOfExpenseCheckbox();
               setAccessabilityOfSelectResolver();
               showContent();
+              setVersion();
             } else {
               document.body.style.height = '200px';
               showErrors(["you don't have permission"]);
@@ -1345,6 +1366,19 @@ document.addEventListener('DOMContentLoaded', function() {
       });
 
     }, errorCather);
+  });
+
+  closeButton.addEventListener('click', function() {
+    window.close();
+  });
+
+  logoutButton.addEventListener('click', function() {
+    localStorage.tocatToken = '';
+    hideContent();
+    chrome.browserAction.setBadgeText({text: ''});
+    port.postMessage({
+      name: 'getToken'
+    });
   });
 
 });

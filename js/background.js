@@ -1,7 +1,7 @@
 bkg = chrome.extension.getBackgroundPage();
 localStorage.tocatToken = '';
 localStorage.tokenUpdatedAt = '';
-localStorage.dateOfLastVisit = '';
+localStorage.storedDomains = '{}';
 
 /**
  *
@@ -9,10 +9,6 @@ localStorage.dateOfLastVisit = '';
  */
 function isTokenExpired() {
   return Date.now() - parseInt(localStorage.tokenUpdatedAt, 10) >= 7 * 24 * 60 * 60 * 1000; // 7 days
-}
-
-function isExpiredBadgeDate() {
-  return Date.now() - parseInt(localStorage.dateOfLastVisit, 10) >= 0.5 * 60 * 60 * 1000; // 0.5 hour
 }
 
 chrome.extension.onConnect.addListener(function(port) {
@@ -31,10 +27,6 @@ chrome.extension.onConnect.addListener(function(port) {
           name: 'getToken',
           token: localStorage.tocatToken
         });
-      case 'setDateLastVisit':
-        console.log(msg);
-        localStorage.dateOfLastVisit = msg.dateOfLastVisit;
-        break;
       default:
         break;
     }
@@ -42,9 +34,17 @@ chrome.extension.onConnect.addListener(function(port) {
 });
 
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
-  var url = tab.url;
-  if (url && changeInfo.status == 'complete') {
-    if (localStorage.tocatToken && !isExpiredBadgeDate()) {
+  var url = tab.url,
+    domain,
+    protocol,
+    full;
+
+  domain = TOCAT_TOOLS.getDomainFromUrl(url);
+  protocol = TOCAT_TOOLS.getProtocolFromUrl(url);
+  full = protocol + '://' + domain;
+
+  if (domain && changeInfo.status == 'complete') {
+    if (localStorage.tocatToken && TOCAT_TOOLS.isDomainStored(full)) {
       TOCAT_TOOLS.updateIcon(url);
     } else {
       chrome.browserAction.setBadgeText({text: ''});
@@ -54,8 +54,17 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
 
 chrome.tabs.onActivated.addListener(function() {
   chrome.tabs.query({'active': true, 'lastFocusedWindow': true}, function (tabs) {
-    if (localStorage.tocatToken && !isExpiredBadgeDate()) {
-      TOCAT_TOOLS.updateIcon(tabs[0].url);
+    var url = tabs[0].url,
+      domain,
+      protocol,
+      full;
+
+    domain = TOCAT_TOOLS.getDomainFromUrl(url);
+    protocol = TOCAT_TOOLS.getProtocolFromUrl(url);
+    full = protocol + '://' + domain;
+
+    if (localStorage.tocatToken && TOCAT_TOOLS.isDomainStored(full)) {
+      TOCAT_TOOLS.updateIcon(url);
     } else {
       chrome.browserAction.setBadgeText({text: ''});
     }

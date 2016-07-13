@@ -10,24 +10,17 @@ if (!chrome.runtime) {
 }
 
 var TOCAT_TOOLS = (function() {
-  var counterRequest = 0;
-  var counterResponse = 0;
-  var tocatToken = '';
-  var port = chrome.extension.connect({name: "connection with background"});
-
-  var urlTocat = 'https://tocat.opsway.com';
+  var counterRequest = 0,
+    counterResponse = 0,
+    tocatToken = '',
+    port = chrome.extension.connect({name: "connection with background"}),
+    urlTocat = 'https://tocat.opsway.com';
 
   // show and hide spinner
   function checkCounters() {
     setTimeout(function() {
-      var spinner = document.getElementById('spinner');
-      if ((counterRequest == counterResponse) && spinner) {
-        spinner.innerHTML = '';
-      }
-
-      if ((counterRequest != counterResponse) && spinner) {
-        // todo: rm it from here
-        spinner.innerHTML =
+      var spinner = document.getElementById('spinner'),
+        markupSpinner =
           '<div class="sk-circle">' +
           '<div class="sk-circle1 sk-child"></div>' +
           '<div class="sk-circle2 sk-child"></div>' +
@@ -42,6 +35,13 @@ var TOCAT_TOOLS = (function() {
           '<div class="sk-circle11 sk-child"></div>' +
           '<div class="sk-circle12 sk-child"></div>' +
           '</div>';
+
+      if ((counterRequest == counterResponse) && spinner) {
+        spinner.innerHTML = '';
+      }
+
+      if ((counterRequest != counterResponse) && spinner) {
+        spinner.innerHTML = markupSpinner;
       }
     }, 50);
   }
@@ -169,6 +169,53 @@ var TOCAT_TOOLS = (function() {
     tocatToken = token;
   }
 
+  /**
+   *
+   * @param url
+   * @returns {*}
+   */
+  function getDomainFromUrl(url) {
+    var protocol = url.split('://')[0],
+      urlWithoutProtocol = url.split('://')[1],
+      domain;
+
+    if (urlWithoutProtocol) {
+      domain = urlWithoutProtocol.split('/')[0];
+    }
+
+    return domain;
+  }
+
+  function getProtocolFromUrl(url) {
+    return url.split('://')[0];
+  }
+
+  /**
+   * Save domain in localStorage
+   * @param domain
+   * @returns {boolean}
+   */
+  function saveDomain(domain) {
+    if (domain) {
+      var storedDomain = JSON.parse(localStorage.storedDomains);
+      storedDomain[domain] = domain;
+      localStorage.storedDomains = JSON.stringify(storedDomain);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Check if domain is stored
+   * @param domain
+   * @returns {boolean}
+   */
+  function isDomainStored(domain) {
+    var storedDomain = JSON.parse(localStorage.storedDomains);
+    bkg.console.log('storedDomain ', storedDomain);
+    return storedDomain[domain] ? true : false;
+  }
+
   return {
     getJSON: getJSONRequest,
     postJSON: postJSONRequest,
@@ -176,7 +223,11 @@ var TOCAT_TOOLS = (function() {
     deleteJSON: deleteJSONRequest,
     updateIcon: updateIcon,
     guidGenerator: guidGenerator,
-    setTokenHeader: setTokenHeader
+    setTokenHeader: setTokenHeader,
+    getDomainFromUrl: getDomainFromUrl,
+    saveDomain: saveDomain,
+    isDomainStored: isDomainStored,
+    getProtocolFromUrl: getProtocolFromUrl
   }
 
 })();
