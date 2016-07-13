@@ -25,8 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
       REMOVE_EXPENSES: 'remove_expenses' //user can remove "expenses" flag of the task'
     },
     globalReceivedACL = [],
-    bkg = chrome.extension.getBackgroundPage(),
-    bcl = bkg.console.log;
+    bkg = chrome.extension.getBackgroundPage();
 
   function showLoginButton() {
     loginButton.classList.remove('hide');
@@ -740,12 +739,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       });
 
-      /*deleteButton.addEventListener('mouseover', function(){
-        if (!checkAccessControl(TASK_ACL.MODIFY_BUDGETS)) {
-          deleteButton.children[0].disabled = true;
-        }
-      });*/
-
     }}));
 
     editableGrid.setCellRenderer('paid', new CellRenderer({render: function(cell, value) {
@@ -927,10 +920,10 @@ document.addEventListener('DOMContentLoaded', function() {
     })
   }
 
-  /*function getMyTeam() {
+  function getMyTeam() {
     return new Promise(function(resolve, reject) {
       TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users/me').then(function(me) {
-        TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users?search=role=Developer team = ' + me.team.name).then(function(users){
+        TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users?search=role=Developer team = ' + me.tocat_team.name).then(function(users){
           resolve(users);
         }, function(err) {
           reject(err);
@@ -939,7 +932,7 @@ document.addEventListener('DOMContentLoaded', function() {
         reject(err)
       })
     });
-  }*/
+  }
 
   /**
    * change select box with resolvers according to users
@@ -954,9 +947,11 @@ document.addEventListener('DOMContentLoaded', function() {
     optGroupMy.label = 'My Team';
     optGroupNotMy.label = 'Other Users';
 
-    /*if (checkAccessControl(TASK_ACL.MODIFY_RESOLVER)) {
+    if (!checkAccessControl(TASK_ACL.MODIFY_RESOLVER)) {
       getMyTeam().then(function(myTeam) {
-        var otherUsers = _.differenceWith(users, myTeam, _.isEqual);
+        var otherUsers = _.differenceWith(users, myTeam, function(user, myTeamPlayer) {
+          return user.id === myTeamPlayer.id;
+        });
         otherUsers = _.sortBy(otherUsers, 'name');
         myTeam = _.sortBy(myTeam, 'name');
 
@@ -984,7 +979,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
       }, errorCather);
-    } else {*/
+    } else {
       var selectResolver = document.getElementById('selectResolver'),
         oldValue = selectResolver.value,
         opts = selectResolver.options;
@@ -997,7 +992,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (flagSelected) {
         selectResolver.value = oldValue;
       }
-    /*}*/
+    }
   }
 
   function setAccessabilityOfSelectResolver() {
