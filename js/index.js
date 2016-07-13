@@ -695,7 +695,6 @@ document.addEventListener('DOMContentLoaded', function() {
               } else {
                 options = getAdjustedFreeOrders(editableGrid, globalAllOrders, selectedValues);
               }
-
               return options;
             },
             getOptionValuesForRender: function(grid, column, rowIndex) {
@@ -944,10 +943,17 @@ document.addEventListener('DOMContentLoaded', function() {
     })
   }
 
+  /**
+   *
+   * @returns {*}
+   */
+  var getMe = function() {
+    return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users/me');
+  }
+
   function getMyTeam() {
     return new Promise(function(resolve, reject) {
-      TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users/me').then(function(me) {
-        console.log('me ', me);
+      getMe().then(function(me) {
         TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users?search=role=Developer team = ' + me.tocat_team.name).then(function(users){
           resolve(users);
         }, function(err) {
