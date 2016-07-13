@@ -184,6 +184,53 @@ var TOCAT_TOOLS = (function() {
     tocatToken = token;
   }
 
+  /**
+   *
+   * @param url
+   * @returns {*}
+   */
+  function getDomainFromUrl(url) {
+    var protocol = url.split('://')[0],
+      urlWithoutProtocol = url.split('://')[1],
+      domain;
+
+    if (urlWithoutProtocol) {
+      domain = urlWithoutProtocol.split('/')[0];
+    }
+
+    return domain;
+  }
+
+  function getProtocolFromUrl(url) {
+    return url.split('://')[0];
+  }
+
+  /**
+   * Save domain in localStorage
+   * @param domain
+   * @returns {boolean}
+   */
+  function saveDomain(domain) {
+    if (domain) {
+      var storedDomain = JSON.parse(localStorage.storedDomains);
+      storedDomain[domain] = domain;
+      localStorage.storedDomains = JSON.stringify(storedDomain);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Check if domain is stored
+   * @param domain
+   * @returns {boolean}
+   */
+  function isDomainStored(domain) {
+    var storedDomain = JSON.parse(localStorage.storedDomains);
+    bkg.console.log('storedDomain ', storedDomain);
+    return storedDomain[domain] ? true : false;
+  }
+
   return {
     getJSON: getJSONRequest,
     postJSON: postJSONRequest,
@@ -192,7 +239,11 @@ var TOCAT_TOOLS = (function() {
     isEmptyObject: isEmptyObject,
     updateIcon: updateIcon,
     guidGenerator: guidGenerator,
-    setTokenHeader: setTokenHeader
+    setTokenHeader: setTokenHeader,
+    getDomainFromUrl: getDomainFromUrl,
+    saveDomain: saveDomain,
+    isDomainStored: isDomainStored,
+    getProtocolFromUrl: getProtocolFromUrl
   }
 
 })();

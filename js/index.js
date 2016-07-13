@@ -27,6 +27,23 @@ document.addEventListener('DOMContentLoaded', function() {
     globalReceivedACL = [],
     bkg = chrome.extension.getBackgroundPage();
 
+  /**
+   * save protocol and domain in localStorage
+   */
+  function saveDomain() {
+    getCurrentUrl().then(function(url){
+      var domain,
+        protocol,
+        full;
+
+      domain = TOCAT_TOOLS.getDomainFromUrl(url);
+      protocol = TOCAT_TOOLS.getProtocolFromUrl(url);
+      full = protocol + '://' + domain;
+
+      TOCAT_TOOLS.saveDomain(full);
+    });
+  }
+
   function showLoginButton() {
     loginButton.classList.remove('hide');
   }
@@ -1263,6 +1280,7 @@ document.addEventListener('DOMContentLoaded', function() {
   port.postMessage({
     name: 'getToken'
   });
+  saveDomain();
 
   port.onMessage.addListener(function(msg) {
     switch (msg.name) {

@@ -11,31 +11,6 @@ function isTokenExpired() {
   return Date.now() - parseInt(localStorage.tokenUpdatedAt, 10) >= 7 * 24 * 60 * 60 * 1000; // 7 days
 }
 
-/**
- * Save domain in localStorage
- * @param domain
- * @returns {boolean}
- */
-function saveDomain(domain) {
-  if (domain) {
-    var storedDomain = JSON.parse(localStorage.storedDomains);
-    storedDomain[domain] = domain;
-    localStorage.storedDomains = JSON.stringify(storedDomain);
-    return true;
-  }
-  return false;
-}
-
-/**
- * Check if domain is stored
- * @param domain
- * @returns {boolean}
- */
-function isDomainStored(domain) {
-  var storedDomain = JSON.parse(localStorage.storedDomains);
-  return storedDomain[domain] ? true : false;
-}
-
 chrome.extension.onConnect.addListener(function(port) {
   port.onMessage.addListener(function(msg) {
     switch (msg.name) {
@@ -59,13 +34,39 @@ chrome.extension.onConnect.addListener(function(port) {
 });
 
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
-  if (changeInfo.status == 'complete') {
-    chrome.browserAction.setBadgeText({text: ''});
+  var url = tab.url,
+    domain,
+    protocol,
+    full;
+
+  domain = TOCAT_TOOLS.getDomainFromUrl(url);
+  protocol = TOCAT_TOOLS.getProtocolFromUrl(url);
+  full = protocol + '://' + domain;
+
+  if (domain && changeInfo.status == 'complete') {
+    if (localStorage.tocatToken && TOCAT_TOOLS.isDomainStored(full)) {
+      TOCAT_TOOLS.updateIcon(url);
+    } else {
+      chrome.browserAction.setBadgeText({text: ''});
+    }
   }
 });
 
 chrome.tabs.onActivated.addListener(function() {
   chrome.tabs.query({'active': true, 'lastFocusedWindow': true}, function (tabs) {
-    chrome.browserAction.setBadgeText({text: ''});
+    var url = tabs[0].url,
+      domain,
+      protocol,
+      full;
+
+    domain = TOCAT_TOOLS.getDomainFromUrl(url);
+    protocol = TOCAT_TOOLS.getProtocolFromUrl(url);
+    full = protocol + '://' + domain;
+
+    if (localStorage.tocatToken && TOCAT_TOOLS.isDomainStored(full)) {
+      TOCAT_TOOLS.updateIcon(url);
+    } else {
+      chrome.browserAction.setBadgeText({text: ''});
+    }
   });
 });
