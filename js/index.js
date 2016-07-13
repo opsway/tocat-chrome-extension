@@ -344,7 +344,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function checkPermission() {
-    if (!TOCAT_TOOLS.isEmptyObject(task)) {
+    if (!_.isEmpty(task)) {
       if (task.expenses) {
         disableAddButton();
         disableSelectResolverBox();
@@ -631,7 +631,7 @@ document.addEventListener('DOMContentLoaded', function() {
               }
             }
 
-            if (!TOCAT_TOOLS.isEmptyObject(task)) {
+            if (!_.isEmpty(task)) {
               updateOrders({
                 order_id: parseInt(orderId, 10),
                 budget: newValue,
@@ -676,7 +676,7 @@ document.addEventListener('DOMContentLoaded', function() {
             editableGrid.setValueAt(rowIdx, 1, data.free_budget);
             editableGrid.setValueAt(rowIdx, 3, data.paid);
           });
-          if (!TOCAT_TOOLS.isEmptyObject(task)) {
+          if (!_.isEmpty(task)) {
             getTicketBudget(newValue, task.id).then(function(data) {
               editableGrid.setValueAt(rowIdx, 2, parseInt(data, 10));
             }, errorCather)
@@ -789,11 +789,11 @@ document.addEventListener('DOMContentLoaded', function() {
       }
 
       parsedValue = parseInt(value.split("'")[1], 10);
-      if (TOCAT_TOOLS.isEmptyObject(globalPotentialOrders) && globalAllOrders[parsedValue]) {
+      if (_.isEmpty(globalPotentialOrders) && globalAllOrders[parsedValue]) {
         cell.innerHTML = '<div class="' + disabledPointer + '">' + globalAllOrders[parsedValue].name + '<em class="icon-pencil icon-pencil-format mr-5"></em></div>';
       }
 
-      if (!TOCAT_TOOLS.isEmptyObject(globalPotentialOrders) && globalPotentialOrders[parsedValue]) {
+      if (!_.isEmpty(globalPotentialOrders) && globalPotentialOrders[parsedValue]) {
         cell.innerHTML = '<div class="' + disabledPointer + '">' + globalPotentialOrders[parsedValue].name + '<em class="icon-pencil icon-pencil-format mr-5"></em></div>';
       }
     }}));
@@ -1084,7 +1084,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function updateTask() {
     getCurrentTask().then(function(receivedTask) {
       task = receivedTask;
-      if (!TOCAT_TOOLS.isEmptyObject(receivedTask)) {
+      if (!_.isEmpty(receivedTask)) {
         fillInformationAboutTask(task);
 
         // todo: redo it
@@ -1209,7 +1209,7 @@ document.addEventListener('DOMContentLoaded', function() {
     selectResolver.addEventListener('change', function() {
       var selectedResolver = getSelectedResolverHtmlObject();
       // id of resolver - selectedResolver.value
-      if (!task || TOCAT_TOOLS.isEmptyObject(task)) {
+      if (!task || _.isEmpty(task)) {
         createNewTask().then(function(data) {
           task = data;
           if (parseInt(selectedResolver.value, 10)) {
@@ -1239,7 +1239,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     checkboxAccepted.addEventListener('change', function() {
-      if (TOCAT_TOOLS.isEmptyObject(task)) {
+      if (_.isEmpty(task)) {
         createNewTask().then(function(data) {
           task = data;
           if (checkboxAccepted.checked) {
@@ -1260,7 +1260,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     checkboxExpense.addEventListener('change', function() {
-      if (TOCAT_TOOLS.isEmptyObject(task)) {
+      if (_.isEmpty(task)) {
         createNewTask().then(function(data) {
           task = data;
           if (checkboxExpense.checked) {
