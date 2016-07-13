@@ -43,7 +43,7 @@ var TOCAT_TOOLS = (function() {
       if ((counterRequest != counterResponse) && spinner) {
         spinner.innerHTML = markupSpinner;
       }
-    }, 1200);
+    }, 50);
   }
 
   function getJSONRequest(url) {
