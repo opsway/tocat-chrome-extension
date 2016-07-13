@@ -90,6 +90,10 @@ input.invalid {
     margin-top: 10px;
 }
 
+.mt-2 {
+    margin-top: 2px;
+}
+
 .mb-0 {
     margin-bottom: 0px;
 }
@@ -134,4 +138,9 @@ html {
     cursor: not-allowed;
     opacity: 0.65;
     box-shadow: none;
+}
+
+.save-message {
+    position: absolute;
+    right: 0;
 }

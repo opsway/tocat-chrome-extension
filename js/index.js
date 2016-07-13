@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', function() {
     globalAllOrders = null,
     globalPotentialOrders = null,
     loginButton = document.getElementById('loginButton'),
+    closeButton = document.getElementById('close-button'),
+    logoutButton = document.getElementById('logout-button'),
     content = document.getElementById('content'),
     TASK_ACL = {
       MODIFY_ACCEPTED: 'modify_accepted', //user can request "Accept Task" (setting or removing accept flag)',
@@ -44,6 +46,14 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  function setVersion() {
+    var manifest = chrome.runtime.getManifest(),
+      version = manifest.version,
+      place = document.getElementById('version-place');
+
+    place.innerHTML = version;
+  }
+
   function showLoginButton() {
     loginButton.classList.remove('hide');
   }
@@ -54,6 +64,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function showContent() {
     content.classList.remove('hide');
+  }
+
+  function hideContent() {
+    content.classList.add('hide');
   }
 
   function hideSpinner() {
@@ -1092,7 +1106,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }, errorCather);
           }
         }
-
       } else {
         // task with external_id does not exist
       }
@@ -1294,6 +1307,7 @@ document.addEventListener('DOMContentLoaded', function() {
               setAccessabilityOfExpenseCheckbox();
               setAccessabilityOfSelectResolver();
               showContent();
+              setVersion();
             } else {
               document.body.style.height = '200px';
               showErrors(["you don't have permission"]);
@@ -1349,6 +1363,19 @@ document.addEventListener('DOMContentLoaded', function() {
       });
 
     }, errorCather);
+  });
+
+  closeButton.addEventListener('click', function() {
+    window.close();
+  });
+
+  logoutButton.addEventListener('click', function() {
+    localStorage.tocatToken = '';
+    hideContent();
+    chrome.browserAction.setBadgeText({text: ''});
+    port.postMessage({
+      name: 'getToken'
+    });
   });
 
 });
