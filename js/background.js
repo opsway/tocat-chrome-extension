@@ -1,6 +1,7 @@
 bkg = chrome.extension.getBackgroundPage();
 localStorage.tocatToken = '';
 localStorage.tokenUpdatedAt = '';
+localStorage.storedDomains = '{}';
 
 /**
  *
@@ -8,6 +9,31 @@ localStorage.tokenUpdatedAt = '';
  */
 function isTokenExpired() {
   return Date.now() - parseInt(localStorage.tokenUpdatedAt, 10) >= 7 * 24 * 60 * 60 * 1000; // 7 days
+}
+
+/**
+ * Save domain in localStorage
+ * @param domain
+ * @returns {boolean}
+ */
+function saveDomain(domain) {
+  if (domain) {
+    var storedDomain = JSON.parse(localStorage.storedDomains);
+    storedDomain[domain] = domain;
+    localStorage.storedDomains = JSON.stringify(storedDomain);
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Check if domain is stored
+ * @param domain
+ * @returns {boolean}
+ */
+function isDomainStored(domain) {
+  var storedDomain = JSON.parse(localStorage.storedDomains);
+  return storedDomain[domain] ? true : false;
 }
 
 chrome.extension.onConnect.addListener(function(port) {
