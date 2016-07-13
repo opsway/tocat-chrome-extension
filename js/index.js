@@ -110,13 +110,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  function setDateLastVisit() {
-    port.postMessage({
-      name: 'setDateLastVisit',
-      dateOfLastVisit: Date.now()
-    });
-  }
-
   /**
    * Show message with text Saved in top right corner
    * @param message
@@ -1270,8 +1263,6 @@ document.addEventListener('DOMContentLoaded', function() {
   port.postMessage({
     name: 'getToken'
   });
-
-  setDateLastVisit();
 
   port.onMessage.addListener(function(msg) {
     switch (msg.name) {
