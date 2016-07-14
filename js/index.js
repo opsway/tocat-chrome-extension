@@ -624,9 +624,16 @@ document.addEventListener('DOMContentLoaded', function() {
             orderId = parseInt(orderId.split("'")[1]);
 
             if (globalAllOrders[orderId]) {
-              var freeBudget = globalAllOrders[orderId].free_budget,
-                rest = freeBudget - parseInt(newValue, 10);
-              if (rest > 0) {
+              var freeBudget = parseInt(editableGrid.getValueAt(rowIdx, 1), 10),
+                oldValue = parseInt(oldValue, 10),
+                newValue = parseInt(newValue, 10),
+                rest = -1;
+
+              if (oldValue <= freeBudget) {
+                rest = freeBudget + oldValue - newValue;
+              }
+
+              if (rest >= 0) {
                 editableGrid.setValueAt(rowIdx, 1, rest);
               }
             }
