@@ -1064,6 +1064,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  function setAccessabilityOfAcceptedCheckbox() {
+    if (checkAccessControl(TASK_ACL.MODIFY_ACCEPTED)) {
+      checkboxAccepted.disabled = false;
+    } else {
+      checkboxAccepted.disabled = true;
+    }
+  }
+
   function setAccessabilityOfExpenseCheckbox() {
     checkboxExpense.disabled = true;
     if (checkAccessControl(TASK_ACL.REMOVE_EXPENSES) && checkAccessControl(TASK_ACL.SET_EXPENSES)) {
@@ -1322,6 +1330,7 @@ document.addEventListener('DOMContentLoaded', function() {
               setAccessabilityOfOrders();
               setAccessabilityOfExpenseCheckbox();
               setAccessabilityOfSelectResolver();
+              setAccessabilityOfAcceptedCheckbox();
               showContent();
               setVersion();
             } else {
