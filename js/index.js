@@ -26,8 +26,7 @@ document.addEventListener('DOMContentLoaded', function() {
       SET_EXPENSES: 'set_expenses', //user can set "expenses" flag of the task',
       REMOVE_EXPENSES: 'remove_expenses' //user can remove "expenses" flag of the task'
     },
-    globalReceivedACL = [],
-    bkg = chrome.extension.getBackgroundPage();
+    globalReceivedACL = [];
 
   /**
    * save protocol and domain in localStorage
@@ -977,10 +976,13 @@ document.addEventListener('DOMContentLoaded', function() {
    * @param users
    * @param flagSelected
    */
-  function rebuildSelect(users, flagSelected) {
+  function rebuildSelect(users, flagSelected, selectedValue) {
     // store my team in global var an then check it
     var optGroupMy = document.createElement('OPTGROUP'),
       optGroupNotMy = document.createElement('OPTGROUP');
+      selectResolver = document.getElementById('selectResolver'),
+      counterOfArguments = arguments.length,
+      oldValue = selectResolver.value;
 
     optGroupMy.label = 'My Team';
     optGroupNotMy.label = 'Other Users';
@@ -993,23 +995,34 @@ document.addEventListener('DOMContentLoaded', function() {
         otherUsers = _.sortBy(otherUsers, 'name');
         myTeam = _.sortBy(myTeam, 'name');
 
-        var selectResolver = document.getElementById('selectResolver'),
-          oldValue = selectResolver.value,
-          opts = selectResolver.options;
+        // todo: refactor me
+        // rm all inside select
+        selectResolver.options.length=0;
+        var ogl=selectResolver.getElementsByTagName('optgroup');
+        for (var i = ogl.length-1 ; i >= 0 ; i-- ){
+          selectResolver.removeChild(ogl[i])
+        }
 
         selectResolver.options.add(new Option('select', 0));
         if (myTeam.length) {
           selectResolver.appendChild(optGroupMy);
         }
         for (var i = 0; i < myTeam.length ; i++) {
-          selectResolver.options.add(new Option(myTeam[i].name, myTeam[i].id));
+          optGroupMy.appendChild(new Option(myTeam[i].name, myTeam[i].id));
         }
 
         if (otherUsers.length) {
           selectResolver.appendChild(optGroupNotMy);
         }
         for (var j = 0; j < otherUsers.length ; j++) {
-          selectResolver.options.add(new Option(otherUsers[j].name, otherUsers[j].id));
+          optGroupNotMy.appendChild(new Option(otherUsers[j].name, otherUsers[j].id));
+        }
+
+        // selectedValue was passed
+        if (counterOfArguments === 3) {
+          selectedValue = selectedValue || 0;
+          selectResolver.value = selectedValue;
+          return;
         }
 
         if (flagSelected) {
@@ -1018,10 +1031,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
       }, errorCather);
     } else {
-      var selectResolver = document.getElementById('selectResolver'),
-        oldValue = selectResolver.value,
-        opts = selectResolver.options;
-
       selectResolver.options.add(new Option('select', 0));
       for (var i = 0; i < users.length ; i++) {
         selectResolver.options.add(new Option(users[i].name, users[i].id));
@@ -1160,7 +1169,7 @@ document.addEventListener('DOMContentLoaded', function() {
         TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/tasks/?search=external_id=' + encodeURIComponent(data)).then(function(data) {
           if (data.length) {
             // todo: rm it from here
-            rebuildSelect(data[0].potential_resolvers);
+            rebuildSelect(data[0].potential_resolvers, true, data[0].resolver.id);
             TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/task/' + data[0].id).then(function(receivedTask) {
               resolve(receivedTask);
             });
@@ -1230,7 +1239,7 @@ document.addEventListener('DOMContentLoaded', function() {
     selectResolver.addEventListener('change', function() {
       var selectedResolver = getSelectedResolverHtmlObject();
       // id of resolver - selectedResolver.value
-      if (!task || _.isEmpty(task)) {
+      if ( _.isEmpty(task)) {
         createNewTask().then(function(data) {
           task = data;
           if (parseInt(selectedResolver.value, 10)) {
