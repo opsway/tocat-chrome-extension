@@ -1056,6 +1056,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (checkboxExpense.checked && checkAccessControl(TASK_ACL.REMOVE_EXPENSES)) {
       checkboxExpense.disabled = false;
     }
+
     if (!checkboxExpense.checked && !!checkAccessControl(TASK_ACL.SET_EXPENSES)) {
       checkboxExpense.disabled = false;
     }
@@ -1082,6 +1083,7 @@ document.addEventListener('DOMContentLoaded', function() {
       task = receivedTask;
       if (!_.isEmpty(receivedTask)) {
         fillInformationAboutTask(task);
+        setAccessabilityOfExpenseCheckbox();
 
         // todo: redo it
         // fix on fix
