@@ -47,6 +47,7 @@ var TOCAT_TOOLS = (function() {
   }
 
   function getJSONRequest(url) {
+    console.log('GET ', url);
     return new Promise(function(resolve, reject) {
       var xhr = new XMLHttpRequest();
       counterRequest += 1;
@@ -71,6 +72,7 @@ var TOCAT_TOOLS = (function() {
   }
 
   function deleteJSONRequest(url) {
+    console.log('DELETE ', url);
     return new Promise(function(resolve, reject) {
       var xhr = new XMLHttpRequest();
       counterRequest += 1;
@@ -95,6 +97,7 @@ var TOCAT_TOOLS = (function() {
   }
 
   function postJSONRequest(url, obj) {
+    console.log('POST ', url);
     return new Promise(function(resolve, reject) {
       var xhr = new XMLHttpRequest();
       counterRequest += 1;

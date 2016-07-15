@@ -3,6 +3,8 @@ document.addEventListener('DOMContentLoaded', function() {
     selectResolver = document.getElementById('selectResolver'),
     checkboxAccepted = document.getElementById('checkbox-accepted'),
     checkboxExpense = document.getElementById('checkbox-expense'),
+    me = new I(),
+    company = new Company(),
     users = [],
     port = chrome.extension.connect({name: "connection with background"}),
     // task is global variable. Redo it
@@ -225,15 +227,8 @@ document.addEventListener('DOMContentLoaded', function() {
       return Promise.reject();
     }
 
-    return new Promise(function(resolve, reject) {
-      getOrder(orderId).then(function(order) {
-        TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users?search=role=Developer team=' + order.team.name)
-          .then(function (data){
-            resolve(data);
-          }, errorCather);
-      }, function(err) {
-        reject(err);
-      })
+    return getOrder(orderId).then(function(order) {
+      return company.getAllDevelopers(order.team.name);
     });
   }
 
@@ -417,14 +412,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
   })();
-
-  /**
-   *
-   * @returns {*}
-   */
-  function getAllDevelopers() {
-    return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users?search=role%20!=%20Manager');
-  }
 
   /**
    *
@@ -950,28 +937,6 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   /**
-   *
-   * @returns {*}
-   */
-  var getMe = function() {
-    return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users/me');
-  }
-
-  function getMyTeam() {
-    return new Promise(function(resolve, reject) {
-      getMe().then(function(me) {
-        TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/users?search=role=Developer team = ' + me.tocat_team.name).then(function(users){
-          resolve(users);
-        }, function(err) {
-          reject(err);
-        })
-      }, function(err){
-        reject(err)
-      })
-    });
-  }
-
-  /**
    * change select box with resolvers according to users
    * @param users
    * @param flagSelected
@@ -988,7 +953,7 @@ document.addEventListener('DOMContentLoaded', function() {
     optGroupNotMy.label = 'Other Users';
 
     if (checkAccessControl(TASK_ACL.MODIFY_RESOLVER)) {
-      getMyTeam().then(function(myTeam) {
+      me.getMyTeam().then(function(myTeam) {
         var otherUsers = _.differenceWith(users, myTeam, function(user, myTeamPlayer) {
           return user.id === myTeamPlayer.id;
         });
@@ -1083,6 +1048,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function setAccessabilityOfExpenseCheckbox() {
     checkboxExpense.disabled = true;
+
     if (checkAccessControl(TASK_ACL.REMOVE_EXPENSES) && checkAccessControl(TASK_ACL.SET_EXPENSES)) {
       checkboxExpense.disabled = false;
     }
@@ -1090,7 +1056,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (checkboxExpense.checked && checkAccessControl(TASK_ACL.REMOVE_EXPENSES)) {
       checkboxExpense.disabled = false;
     }
-    if (!checkboxExpense.checked && checkAccessControl(TASK_ACL.SET_EXPENSES)) {
+    if (!checkboxExpense.checked && !!checkAccessControl(TASK_ACL.SET_EXPENSES)) {
       checkboxExpense.disabled = false;
     }
   }
@@ -1164,31 +1130,22 @@ document.addEventListener('DOMContentLoaded', function() {
    * @returns {Promise.<T>}
    */
   function getCurrentTask() {
-    return new Promise(function(resolve, reject) {
-      getCurrentUrl().then(function(data) {
-        TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/tasks/?search=external_id=' + encodeURIComponent(data)).then(function(data) {
-          if (data.length) {
-            // todo: rm it from here
-            rebuildSelect(data[0].potential_resolvers, true, data[0].resolver.id);
-            TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/task/' + data[0].id).then(function(receivedTask) {
-              resolve(receivedTask);
-            });
-          } else {
-            // todo: rm it from here
-            getAllDevelopers().then(function(data) {
-              rebuildSelect(data);
-              resolve({});
-            }, function(err) {
-              reject(err);
-            });
-            // show text before orders
+    return getCurrentUrl().then(function(data) {
+      return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/tasks/?search=external_id=' + encodeURIComponent(data)).then(function(data) {
+        if (data.length) {
+          rebuildSelect(data[0].potential_resolvers, true, data[0].resolver.id);
+          return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/task/' + data[0].id).then(function(receivedTask) {
+            return receivedTask;
+          });
+        } else {
+          return company.getAllDevelopers().then(function(data) {
+            rebuildSelect(data);
             showOrderText('No orders yet, please add one');
-          }
-        }, function(err) {
-          reject(err);
-        })
-      });
-    });
+            return {};
+          });
+        }
+      })
+    })
   }
 
   function renderContent() {
@@ -1407,6 +1364,8 @@ document.addEventListener('DOMContentLoaded', function() {
     localStorage.tocatToken = '';
     hideContent();
     chrome.browserAction.setBadgeText({text: ''});
+    me.logOut();
+    company.logOut();
     port.postMessage({
       name: 'getToken'
     });

@@ -19,6 +19,8 @@ gulp.task('concat-scripts', function() {
     './js/editableGrid/editablegrid_validators.js',
     './js/bootbox.js',
     './js/tools.js',
+    './js/I.js',
+    './js/Company.js',
     './js/index.js'])
     .pipe(concat('assets.js'))
     .pipe(gulp.dest('./build/'));
