@@ -54,23 +54,18 @@ gulp.task('copy-key', function() {
     .pipe(gulp.dest('.'));
 });
 
-gulp.task('rm-node_modules',['copy-key'], function() {
-  return gulp.src('./node_modules')
-  .pipe(clean({force: true}));
-});
-
 gulp.task('rm-temporary-key', ['zip'], function(){
   return gulp.src('./key.pem').
     pipe(clean({force: true}));
 });
 
-gulp.task('zip', ['rm-node_modules'], () => {
+gulp.task('zip', ['copy-key'], () => {
   return gulp.src('../tocat-chrome-extension/**/*.*')
     .pipe(zip('tocat-chrome-extension.zip'))
     .pipe(gulp.dest('../'));
 });
 
-gulp.task('compress', ['copy-key', 'rm-node_modules', 'zip', 'rm-temporary-key']);
+gulp.task('compress', ['copy-key', 'zip', 'rm-temporary-key']);
 gulp.task('default', ['concat-scripts', 'concat-css', 'concat-background-scripts']);
 gulp.task('watch', function() {
   return gulp.watch(['js/**/*.js', 'style/**/*.css'], ['default']);

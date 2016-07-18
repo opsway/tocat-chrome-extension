@@ -688,6 +688,7 @@ document.addEventListener('DOMContentLoaded', function() {
               } else {
                 options = getAdjustedFreeOrders(editableGrid, globalAllOrders, selectedValues);
               }
+
               return options;
             },
             getOptionValuesForRender: function(grid, column, rowIndex) {
@@ -793,7 +794,7 @@ document.addEventListener('DOMContentLoaded', function() {
     editableGrid.renderGrid("tablecontent", "ordersGrid");
 
     window.editableGrid = editableGrid;
-
+    // todo: refactor me
     // ugly solution
     var orders = document.getElementsByClassName('editablegrid-order');
     for (var i = 0 ; i < orders.length ; i++) {
@@ -874,7 +875,7 @@ document.addEventListener('DOMContentLoaded', function() {
    * @returns {*}
    */
   function getAdjustedFreeOrders(editableGrid, allOrders, notThisId) {
-    var usedOrders = getAllSelectedValuesWithoutOne(editableGrid, notThisId);;
+    var usedOrders = getAllSelectedValuesWithoutOne(editableGrid, notThisId);
     var freeOrders = getFreeOrders(allOrders, usedOrders);
     var adjustedOrders = {}
     for (var prop in freeOrders) {
@@ -1292,6 +1293,7 @@ document.addEventListener('DOMContentLoaded', function() {
       case 'getToken':
         if (msg.token) {
           TOCAT_TOOLS.setTokenHeader(msg.token);
+          getOrdersOfMyTeam();
           getACL().then(function () {
             if (checkAccessControl(TASK_ACL.SHOW_AGGREGATED_INFO)) {
               renderContent();
