@@ -59,7 +59,7 @@ gulp.task('rm-temporary-key', ['zip'], function(){
     pipe(clean({force: true}));
 });
 
-gulp.task('zip', ['copy-key'], () => {
+gulp.task('zip', ['copy-key'], function (){
   return gulp.src('../tocat-chrome-extension/**/*.*')
     .pipe(zip('tocat-chrome-extension.zip'))
     .pipe(gulp.dest('../'));

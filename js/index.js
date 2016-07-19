@@ -383,7 +383,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function setExpensesStatus(task) {
     return TOCAT_TOOLS.postJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/expenses').then(function () {
       task.expenses = true;
-    }, (err) => {
+    }, function (err) {
       checkboxExpense.checked = false;
       errorCather(err);
     });
