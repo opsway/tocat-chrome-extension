@@ -383,7 +383,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function setExpensesStatus(task) {
     return TOCAT_TOOLS.postJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/expenses').then(function () {
       task.expenses = true;
-    }, (err) => {
+    }, function (err) {
       checkboxExpense.checked = false;
       errorCather(err);
     });
@@ -1293,7 +1293,7 @@ document.addEventListener('DOMContentLoaded', function() {
       case 'getToken':
         if (msg.token) {
           TOCAT_TOOLS.setTokenHeader(msg.token);
-          getOrdersOfMyTeam();
+          me.getOrdersOfMyTeam();
           getACL().then(function () {
             if (checkAccessControl(TASK_ACL.SHOW_AGGREGATED_INFO)) {
               renderContent();
