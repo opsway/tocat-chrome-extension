@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function hideContent() {
     content.classList.add('hide');
+    loginButton.classList.remove('hide');
   }
 
   function hideSpinner() {

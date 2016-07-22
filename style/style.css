@@ -1,5 +1,6 @@
 body {
     width: 750px;
+    min-height: 142px;
 }
 
 .top-buffer {
