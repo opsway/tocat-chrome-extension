@@ -1,6 +1,6 @@
 body {
     width: 750px;
-    height: 750px;
+    min-height: 142px;
 }
 
 .top-buffer {
@@ -61,7 +61,7 @@ input.invalid {
     left: 0;
     width: 492px;
     height: 108px;
-    margin: 0 auto;
+    margin: 75px auto;
 }
 
 .login-button:hover {
