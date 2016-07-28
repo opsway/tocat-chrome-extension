@@ -181,7 +181,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     return new Promise(function(resolve, reject) {
       TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/user/' + userId).then(function(data) {
-        TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/orders?limit=9999999&search=team==' + encodeURIComponent(data.tocat_team.name) + ' completed = 0&sorted_by=name')
+        TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/orders?limit=9999999&search=team==' + data.tocat_team.name + ' completed = 0&sorted_by=name')
           .then(function (data){
             resolve(data);
           }, errorCather);
@@ -1135,7 +1135,7 @@ document.addEventListener('DOMContentLoaded', function() {
    */
   function getCurrentTask() {
     return getCurrentUrl().then(function(data) {
-      return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/tasks/?search=external_id=' + encodeURIComponent(data)).then(function(data) {
+      return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/tasks/?search=external_id=' + data).then(function(data) {
         if (data.length) {
           rebuildSelect(data[0].potential_resolvers, true, data[0].resolver.id);
           return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/task/' + data[0].id).then(function(receivedTask) {
@@ -1294,7 +1294,7 @@ document.addEventListener('DOMContentLoaded', function() {
       case 'getToken':
         if (msg.token) {
           TOCAT_TOOLS.setTokenHeader(msg.token);
-          me.getOrdersOfMyTeam();
+          // me.getOrdersOfMyTeam();
           getACL().then(function () {
             if (checkAccessControl(TASK_ACL.SHOW_AGGREGATED_INFO)) {
               renderContent();

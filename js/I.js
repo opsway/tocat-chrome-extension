@@ -51,7 +51,7 @@ function I() {
   this.getOrdersOfMyTeam = function() {
     return this.getMe().then(function(me) {
       if (!ordersOfMyTeam) {
-        return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/orders?limit=9999999&search=team==' + encodeURIComponent(me.tocat_team.name) + ' completed = 0&sorted_by=name').then(function(myOrders){
+        return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/orders?limit=9999999&search=team==' + me.tocat_team.name + ' completed = 0&sorted_by=name').then(function(myOrders){
           ordersOfMyTeam = myOrders;
           return myOrders;
         });

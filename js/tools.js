@@ -37,7 +37,7 @@ var TOCAT_TOOLS = (function() {
       var xhr = new XMLHttpRequest();
       counterRequest += 1;
       checkCounters();
-      xhr.open('get', url, true);
+      xhr.open('get', encodeURI(url), true);
       if (localStorage.tocatToken) {
         xhr.setRequestHeader('Authorization', localStorage.tocatToken);
       }
@@ -62,7 +62,7 @@ var TOCAT_TOOLS = (function() {
       var xhr = new XMLHttpRequest();
       counterRequest += 1;
       checkCounters();
-      xhr.open('delete', url, true);
+      xhr.open('delete', encodeURI(url), true);
       if (tocatToken) {
         xhr.setRequestHeader('Authorization', tocatToken);
       }
@@ -87,7 +87,7 @@ var TOCAT_TOOLS = (function() {
       var xhr = new XMLHttpRequest();
       counterRequest += 1;
       checkCounters();
-      xhr.open('post', url, true);
+      xhr.open('post', encodeURI(url), true);
       if (tocatToken) {
         xhr.setRequestHeader('Authorization', tocatToken);
       }
@@ -112,7 +112,7 @@ var TOCAT_TOOLS = (function() {
    * @param url
    */
   function updateIcon(url) {
-    TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/tasks/?search=external_id=' + encodeURIComponent(url)).then(function(data) {
+    TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/tasks/?search=external_id=' + url).then(function(data) {
       var orders = [];
       var totalBudget = null;
       if (data.length) {
