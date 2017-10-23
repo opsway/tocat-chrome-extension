@@ -5,25 +5,29 @@ var rename = require('gulp-rename');
 var util = require('gulp-util');
 var zip = require('gulp-zip');
 var clean = require('gulp-clean');
+var paths = {
+  build: './build/',
+  node: './node_modules'
+};
 
 gulp.task('concat-scripts', function() {
   return gulp.src([
-    './js/jquery/jquery-1.12.4.js',
-    './js/lodash/lodash-4.13.1.js',
-    './js/bootstrap.js',
+    paths.node + '/jquery/dist/jquery.min.js',
+    paths.node + '/lodash/lodash.min.js',
+    paths.node + '/bootstrap/dist/js/bootstrap.min.js',
     './js/editableGrid/editablegrid.js',
     './js/editableGrid/editablegrid_charts.js',
     './js/editableGrid/editablegrid_editors.js',
     './js/editableGrid/editablegrid_renderers.js',
     './js/editableGrid/editablegrid_utils.js',
     './js/editableGrid/editablegrid_validators.js',
-    './js/bootbox.js',
+    paths.node + '/bootbox/bootbox.min.js',
     './js/tools.js',
     './js/I.js',
     './js/Company.js',
     './js/index.js'])
     .pipe(concat('assets.js'))
-    .pipe(gulp.dest('./build/'));
+    .pipe(gulp.dest(paths.build));
 });
 
 gulp.task('concat-background-scripts', function() {
@@ -32,7 +36,16 @@ gulp.task('concat-background-scripts', function() {
     './js/background.js'
   ])
   .pipe(concat('background-assets.js'))
-  .pipe(gulp.dest('./build/'));
+  .pipe(gulp.dest(paths.build));
+});
+
+gulp.task('concat-content-scripts', function() {
+  return gulp.src([
+    './js/tools.js',
+    './js/content.js'
+  ])
+  .pipe(concat('content-assets.js'))
+  .pipe(gulp.dest(paths.build));
 });
 
 gulp.task('concat-css', function() {
@@ -45,7 +58,7 @@ gulp.task('concat-css', function() {
     "./style/simple-line-icons.css",
     "./js/editableGrid/editablegrid.css"])
     .pipe(concatCss('assets.css'))
-    .pipe(gulp.dest('./build/'));
+    .pipe(gulp.dest(paths.build));
 });
 
 gulp.task('copy-key', function() {
@@ -66,7 +79,7 @@ gulp.task('zip', ['copy-key'], function (){
 });
 
 gulp.task('compress', ['copy-key', 'zip', 'rm-temporary-key']);
-gulp.task('default', ['concat-scripts', 'concat-css', 'concat-background-scripts']);
+gulp.task('default', ['concat-scripts', 'concat-css', 'concat-background-scripts', 'concat-content-scripts']);
 gulp.task('watch', function() {
   return gulp.watch(['js/**/*.js', 'style/**/*.css'], ['default']);
 });

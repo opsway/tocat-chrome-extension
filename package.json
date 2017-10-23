@@ -1,8 +1,13 @@
 {
   "name": "tocat-chrome-extension",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "",
-  "dependencies": {},
+  "dependencies": {
+    "bootbox": "4.4.0",
+    "bootstrap": "3.3.6",
+    "jquery": "1.12.4",
+    "lodash": "4.13.1"
+  },
   "devDependencies": {
     "gulp": "^3.9.1",
     "gulp-clean": "^0.3.2",
@@ -13,7 +18,8 @@
     "gulp-zip": "^3.2.0"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "gulp"
   },
   "repository": {
     "type": "git",
