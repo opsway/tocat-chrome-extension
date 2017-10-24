@@ -145,3 +145,7 @@ html {
     position: absolute;
     right: 0;
 }
+
+.cursor-p {
+    cursor: pointer;
+}

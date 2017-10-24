@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
     checkboxExpense = document.getElementById('checkbox-expense'),
     me = new I(),
     company = new Company(),
+    appId = 'odhmjbnlbbmepdhbdhpfjnhngniadfoo',
     users = [],
     port = chrome.extension.connect({name: "connection with background"}),
     // task is global variable. Redo it
@@ -56,25 +57,25 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function showLoginButton() {
-    loginButton.classList.remove('hide');
+    loginButton.classList.remove('hidden');
   }
 
   function hideLoginButton() {
-    loginButton.classList.add('hide');
+    loginButton.classList.add('hidden');
   }
 
   function showContent() {
-    content.classList.remove('hide');
+    content.classList.remove('hidden');
   }
 
   function hideContent() {
-    content.classList.add('hide');
-    loginButton.classList.remove('hide');
+    content.classList.add('hidden');
+    loginButton.classList.remove('hidden');
   }
 
   function hideSpinner() {
     var spinner = document.getElementById('spinner');
-    spinner.classList.add('hide');
+    spinner.classList.add('hidden');
   }
 
   function updateAllOrders() {
@@ -1123,7 +1124,7 @@ document.addEventListener('DOMContentLoaded', function() {
    */
   function getCurrentUrl() {
     return new Promise(function(resolve, reject) {
-      chrome.tabs.query({'active': true, 'lastFocusedWindow': true}, function (tabs) {
+      chrome.tabs.query({'active': true, 'currentWindow': true}, function (tabs) {
         resolve(tabs[0].url);
       });
     });
@@ -1321,15 +1322,147 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
+  function testAuth(serverUrl) {
+    var manifest = chrome.runtime.getManifest();
+
+    var clientId = encodeURIComponent(manifest.oauth2.client_id);
+    var scopes = encodeURIComponent(manifest.oauth2.scopes.join(' '));
+    // var redirectUri = encodeURIComponent('https://' + chrome.runtime.id + '.chromiumapp.org');
+    var redirectUri = encodeURIComponent('https://tocat.opsway.com/authenticate');
+
+    var url = 'https://accounts.google.com/o/oauth2/auth?' +
+      'access_type=offline' +
+      '&client_id=' + clientId +
+      '&response_type=code' +
+      '&redirect_uri=' + redirectUri +
+      '&scope=' + scopes;
+
+    console.log('testURL: ', url);
+
+    chrome.identity.launchWebAuthFlow({
+        'url': url,
+        'interactive':true
+      },
+      function(redirectedTo) {
+        if (chrome.runtime.lastError) {
+          // Example: Authorization page could not be loaded.
+          console.log(chrome.runtime.lastError.message);
+        }
+        else {
+          var response = redirectedTo.split('#', 2)[1];
+
+          // Example: id_token=<YOUR_BELOVED_ID_TOKEN>&authuser=0&hd=<SOME.DOMAIN.PL>&session_state=<SESSION_SATE>&prompt=<PROMPT>
+          console.log(redirectedTo);
+        }
+      }
+    );
+  }
+
+  function testAuthTabs () {
+    // Using chrome.tabs
+    var manifest = chrome.runtime.getManifest();
+
+    var clientId = encodeURIComponent(manifest.oauth2.client_id);
+    var scopes = encodeURIComponent(manifest.oauth2.scopes.join(' '));
+    var redirectUri = encodeURIComponent('https://tocat.opsway.com/authenticate');
+
+    var url = 'https://accounts.google.com/o/oauth2/auth' +
+      '?client_id=' + clientId +
+      '&response_type=code' +
+      '&access_type=offline' +
+      '&redirect_uri=' + redirectUri +
+      '&scope=' + scopes;
+
+    var RESULT_PREFIX = ['Success', 'Denied', 'Error'];
+    chrome.tabs.create({'url': 'about:blank'}, function(authenticationTab) {
+      chrome.tabs.onUpdated.addListener(function googleAuthorizationHook(tabId, changeInfo, tab) {
+        if (tabId === authenticationTab.id) {
+          var titleParts = tab.title.split(' ', 2);
+
+          var result = titleParts[0];
+          if (titleParts.length == 2 && RESULT_PREFIX.indexOf(result) >= 0) {
+            chrome.tabs.onUpdated.removeListener(googleAuthorizationHook);
+            chrome.tabs.remove(tabId);
+
+            var response = titleParts[1];
+            switch (result) {
+              case 'Success':
+                // Example: id_token=<YOUR_BELOVED_ID_TOKEN>&authuser=0&hd=<SOME.DOMAIN.PL>&session_state=<SESSION_SATE>&prompt=<PROMPT>
+                console.log(response);
+                break;
+              case 'Denied':
+                // Example: error_subtype=access_denied&error=immediate_failed
+                console.log(response);
+                break;
+              case 'Error':
+                // Example: 400 (OAuth2 Error)!!1
+                console.log(response);
+                break;
+            }
+          }
+        }
+      });
+
+      chrome.tabs.update(authenticationTab.id, {'url': url});
+    });
+  }
+
+  function authenticatedXhr(method, url, callback) {
+    var retry = true;
+    function getTokenAndXhr() {
+      chrome.identity.getAuthToken({/* details */},
+        function (access_token) {
+          if (chrome.runtime.lastError) {
+            callback(chrome.runtime.lastError);
+            return;
+          }
+
+          var xhr = new XMLHttpRequest();
+          xhr.open(method, url);
+          xhr.setRequestHeader('Authorization',
+            'Bearer ' + access_token);
+
+          xhr.onload = function () {
+            if (this.status === 401 && retry) {
+              // This status may indicate that the cached
+              // access token was invalid. Retry once with
+              // a fresh token.
+              retry = false;
+              chrome.identity.removeCachedAuthToken(
+                { 'token': access_token },
+                getTokenAndXhr);
+              return;
+            }
+
+            callback(null, this.status, this.responseText);
+          }
+        });
+    }
+  }
+
   loginButton.addEventListener('click', function() {
     getAuthUrl().then(function(data) {
-      hideLoginButton();
+      var test1 = 'https://' + appId + '.chromiumapp.org/provider_cb';
+      // hideLoginButton();
 
-      chrome.identity.launchWebAuthFlow(
-        {'url': data.url, 'interactive': true},
+      console.log('data.url: ', data.url);
+
+      // https://accounts.google.com/o/oauth2/auth?access_type=offline&client_id=641843524050-oic7glk3tu44o8nvlngulfmtrtv62rqu.apps.googleusercontent.com&redirect_uri=https://tocat.opsway.com/authenticate&response_type=code&scope=https://www.googleapis.com/auth/userinfo.email
+      // https://accounts.google.com/o/oauth2/auth?client_id=158247504949-3grgaccf3iflq6l0dophe4a7kcapnqd7.apps.googleusercontent.com&response_type=id_token&access_type=offline&redirect_uri=https%3A%2F%2Fkhdfmegnlgloehahkdblifecbmgdkndn.chromiumapp.org&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email
+
+      // testAuth(data.url);
+      testAuthTabs();
+
+      /*chrome.identity.launchWebAuthFlow(
+        {'url': test1, 'interactive': true},
         function(redirect_url) {
           if (!chrome.runtime.lastError) {
             if (redirect_url) {
+
+              console.log('READY! redirect_url: ', redirect_url);
+
+              // https://odhmjbnlbbmepdhbdhpfjnhngniadfoo.chromiumapp.org/provider_cb#authToken=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2VtYWlsIjoiYW5iYWxAb3Bzd2F5LmNvbSIsImV4cCI6MTUwOTQ1NzY1NH0.AbLfi2KOJXexKmcLkM2WavmAflwXQcSUGBFKnncTfCw
+
               var message = redirect_url.split('#')[1];
               var authToken = message.split('=')[1];
 
@@ -1343,20 +1476,22 @@ document.addEventListener('DOMContentLoaded', function() {
               });
 
             } else {
+              console.log('redirect_url: ', redirect_url);
               addAuthError('Authorization failed');
-              chrome.identity.launchWebAuthFlow(
+              /!*chrome.identity.launchWebAuthFlow(
                 { 'url': 'https://accounts.google.com/logout' },
                 function() {}
-              );
+              );*!/
             }
           } else {
+            console.log('chrome.runtime.lastError: ', chrome.runtime.lastError);
             addAuthError('Authorization failed');
-            chrome.identity.launchWebAuthFlow(
+            /!*chrome.identity.launchWebAuthFlow(
               { 'url': 'https://accounts.google.com/logout' },
               function() {}
-            );
+            );*!/
           }
-      });
+      });*/
 
     }, errorCather);
   });

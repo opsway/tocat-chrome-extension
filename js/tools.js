@@ -22,11 +22,11 @@ var TOCAT_TOOLS = (function() {
       var spinner = document.getElementById('spinner');
 
       if ((counterRequest == counterResponse) && spinner) {
-        spinner.classList.add('hide');
+        spinner.classList.add('hidden');
       }
 
       if ((counterRequest != counterResponse) && spinner) {
-        spinner.classList.remove('hide');
+        spinner.classList.remove('hidden');
       }
     }, 50);
   }

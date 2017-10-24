@@ -6,7 +6,7 @@ var util = require('gulp-util');
 var zip = require('gulp-zip');
 var clean = require('gulp-clean');
 var paths = {
-  build: './build/',
+  build: './build',
   node: './node_modules'
 };
 
@@ -27,7 +27,7 @@ gulp.task('concat-scripts', function() {
     './js/Company.js',
     './js/index.js'])
     .pipe(concat('assets.js'))
-    .pipe(gulp.dest(paths.build));
+    .pipe(gulp.dest(paths.build + '/js'));
 });
 
 gulp.task('concat-background-scripts', function() {
@@ -36,7 +36,7 @@ gulp.task('concat-background-scripts', function() {
     './js/background.js'
   ])
   .pipe(concat('background-assets.js'))
-  .pipe(gulp.dest(paths.build));
+  .pipe(gulp.dest(paths.build + '/js'));
 });
 
 gulp.task('concat-content-scripts', function() {
@@ -45,12 +45,12 @@ gulp.task('concat-content-scripts', function() {
     './js/content.js'
   ])
   .pipe(concat('content-assets.js'))
-  .pipe(gulp.dest(paths.build));
+  .pipe(gulp.dest(paths.build + '/js'));
 });
 
 gulp.task('concat-css', function() {
   return gulp.src([
-    "./style/bootstrap.css",
+    paths.node + '/bootstrap/dist/css/bootstrap.css',
     "./style/app.css",
     "./style/font-awesome.css",
     "./style/spinkit.css",
@@ -58,7 +58,7 @@ gulp.task('concat-css', function() {
     "./style/simple-line-icons.css",
     "./js/editableGrid/editablegrid.css"])
     .pipe(concatCss('assets.css'))
-    .pipe(gulp.dest(paths.build));
+    .pipe(gulp.dest(paths.build + '/css'));
 });
 
 gulp.task('copy-key', function() {
