@@ -1358,55 +1358,6 @@ document.addEventListener('DOMContentLoaded', function() {
     );
   }
 
-  function testAuthTabs () {
-    // Using chrome.tabs
-    var manifest = chrome.runtime.getManifest();
-
-    var clientId = encodeURIComponent(manifest.oauth2.client_id);
-    var scopes = encodeURIComponent(manifest.oauth2.scopes.join(' '));
-    var redirectUri = encodeURIComponent('https://tocat.opsway.com/authenticate');
-
-    var url = 'https://accounts.google.com/o/oauth2/auth' +
-      '?client_id=' + clientId +
-      '&response_type=code' +
-      '&access_type=offline' +
-      '&redirect_uri=' + redirectUri +
-      '&scope=' + scopes;
-
-    var RESULT_PREFIX = ['Success', 'Denied', 'Error'];
-    chrome.tabs.create({'url': 'about:blank'}, function(authenticationTab) {
-      chrome.tabs.onUpdated.addListener(function googleAuthorizationHook(tabId, changeInfo, tab) {
-        if (tabId === authenticationTab.id) {
-          var titleParts = tab.title.split(' ', 2);
-
-          var result = titleParts[0];
-          if (titleParts.length == 2 && RESULT_PREFIX.indexOf(result) >= 0) {
-            chrome.tabs.onUpdated.removeListener(googleAuthorizationHook);
-            chrome.tabs.remove(tabId);
-
-            var response = titleParts[1];
-            switch (result) {
-              case 'Success':
-                // Example: id_token=<YOUR_BELOVED_ID_TOKEN>&authuser=0&hd=<SOME.DOMAIN.PL>&session_state=<SESSION_SATE>&prompt=<PROMPT>
-                console.log(response);
-                break;
-              case 'Denied':
-                // Example: error_subtype=access_denied&error=immediate_failed
-                console.log(response);
-                break;
-              case 'Error':
-                // Example: 400 (OAuth2 Error)!!1
-                console.log(response);
-                break;
-            }
-          }
-        }
-      });
-
-      chrome.tabs.update(authenticationTab.id, {'url': url});
-    });
-  }
-
   function authenticatedXhr(method, url, callback) {
     var retry = true;
     function getTokenAndXhr() {
@@ -1442,16 +1393,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
   loginButton.addEventListener('click', function() {
     getAuthUrl().then(function(data) {
-      var test1 = 'https://' + appId + '.chromiumapp.org/provider_cb';
-      // hideLoginButton();
+      hideLoginButton();
 
-      console.log('data.url: ', data.url);
+      port.postMessage({
+        name: 'initAuth',
+        url: data.url
+      });
+
+      /*port.postMessage({
+        name: 'getToken'
+      });*/
 
       // https://accounts.google.com/o/oauth2/auth?access_type=offline&client_id=641843524050-oic7glk3tu44o8nvlngulfmtrtv62rqu.apps.googleusercontent.com&redirect_uri=https://tocat.opsway.com/authenticate&response_type=code&scope=https://www.googleapis.com/auth/userinfo.email
       // https://accounts.google.com/o/oauth2/auth?client_id=158247504949-3grgaccf3iflq6l0dophe4a7kcapnqd7.apps.googleusercontent.com&response_type=id_token&access_type=offline&redirect_uri=https%3A%2F%2Fkhdfmegnlgloehahkdblifecbmgdkndn.chromiumapp.org&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email
 
       // testAuth(data.url);
-      testAuthTabs();
 
       /*chrome.identity.launchWebAuthFlow(
         {'url': test1, 'interactive': true},
