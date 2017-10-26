@@ -1,3 +1,7 @@
-// todo: ZohoPeople decorator here
+'use strict';
 
-console.log('Content zoho!');
+var targetPageHash = '#attendance/entry/calendarview';
+
+if (window.location.hash === targetPageHash) {
+  console.log('Content zoho hr!');
+}

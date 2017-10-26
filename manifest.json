@@ -15,7 +15,6 @@
     "https://accounts.google.com/*",
     "https://*.googleusercontent.com/*",
     "*://*.googleapis.com/*",
-    "https://people.zoho.com/*",
     "tabs",
     "identity"
   ],
@@ -25,7 +24,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://people.zoho.com/*"],
+      "matches": ["https://people.zoho.com/hr*"],
       "css": ["./build/css/content/people-zoho-com.css"],
       "js": ["./build/js/content/people-zoho-com.js"],
       "run_at": "document_end"

@@ -19,7 +19,7 @@ gulp.task('move-content-scripts', function() {
 
 gulp.task('move-content-styles', function() {
   return gulp.src([
-    './css/content/*.css'
+    './style/content/*.css'
   ])
     .pipe(gulp.dest(paths.build + '/css/content'));
 });
