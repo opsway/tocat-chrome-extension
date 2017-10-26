@@ -27,8 +27,8 @@
     {
       "matches": ["https://people.zoho.com/*"],
       "css": ["./build/css/content/people-zoho-com.css"],
-      "js": ["./build/js/content/people-zoho-com.js"],
-      "run_at": "document_end"
+//      "matches": ["https://people.zoho.com/hr#attendance/report/hoursreport"],
+      "js": ["./build/js/content/people-zoho-com.js"]
     }
   ],
   "icons": {
@@ -38,6 +38,7 @@
   },
   "offline_enabled": false,
   "oauth2": {
+//    "client_id": "158247504949-3grgaccf3iflq6l0dophe4a7kcapnqd7.apps.googleusercontent.com",
     "client_id": "641843524050-oic7glk3tu44o8nvlngulfmtrtv62rqu.apps.googleusercontent.com",
     "scopes": [
       "https://www.googleapis.com/auth/userinfo.email"

@@ -1,3 +1,3 @@
 // todo: ZohoPeople decorator here
 
-console.log('Content!');
+console.log('Content zoho!');

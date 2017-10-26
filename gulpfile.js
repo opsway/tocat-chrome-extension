@@ -1,27 +1,41 @@
-var gulp = require('gulp');
-var concat = require('gulp-concat');
-var concatCss = require('gulp-concat-css');
-var rename = require('gulp-rename');
-var util = require('gulp-util');
-var zip = require('gulp-zip');
-var clean = require('gulp-clean');
-var paths = {
-  build: './build',
-  node: './node_modules'
-};
+var gulp = require('gulp'),
+  concat = require('gulp-concat'),
+  concatCss = require('gulp-concat-css'),
+  rename = require('gulp-rename'),
+  util = require('gulp-util'),
+  zip = require('gulp-zip'),
+  clean = require('gulp-clean'),
+  paths = {
+    build: './build',
+    node: './node_modules'
+  };
 
-gulp.task('concat-scripts', function() {
+gulp.task('move-content-scripts', function() {
+  return gulp.src([
+    './js/content/*.js'
+  ])
+    .pipe(gulp.dest(paths.build + '/js/content'));
+});
+
+gulp.task('move-content-styles', function() {
+  return gulp.src([
+    './css/content/*.css'
+  ])
+    .pipe(gulp.dest(paths.build + '/css/content'));
+});
+
+gulp.task('concat-scripts', ['move-content-scripts'], function() {
   return gulp.src([
     paths.node + '/jquery/dist/jquery.min.js',
     paths.node + '/lodash/lodash.min.js',
     paths.node + '/bootstrap/dist/js/bootstrap.min.js',
+    paths.node + '/bootbox/bootbox.min.js',
     './js/editableGrid/editablegrid.js',
     './js/editableGrid/editablegrid_charts.js',
     './js/editableGrid/editablegrid_editors.js',
     './js/editableGrid/editablegrid_renderers.js',
     './js/editableGrid/editablegrid_utils.js',
     './js/editableGrid/editablegrid_validators.js',
-    paths.node + '/bootbox/bootbox.min.js',
     './js/tools.js',
     './js/I.js',
     './js/Company.js',
@@ -39,16 +53,7 @@ gulp.task('concat-background-scripts', function() {
   .pipe(gulp.dest(paths.build + '/js'));
 });
 
-gulp.task('concat-content-scripts', function() {
-  return gulp.src([
-    './js/tools.js',
-    './js/content.js'
-  ])
-  .pipe(concat('content-assets.js'))
-  .pipe(gulp.dest(paths.build + '/js'));
-});
-
-gulp.task('concat-css', function() {
+gulp.task('concat-css', ['move-content-styles'], function() {
   return gulp.src([
     paths.node + '/bootstrap/dist/css/bootstrap.css',
     "./style/app.css",
@@ -79,7 +84,7 @@ gulp.task('zip', ['copy-key'], function (){
 });
 
 gulp.task('compress', ['copy-key', 'zip', 'rm-temporary-key']);
-gulp.task('default', ['concat-scripts', 'concat-css', 'concat-background-scripts', 'concat-content-scripts']);
+gulp.task('default', ['concat-scripts', 'concat-css', 'concat-background-scripts']);
 gulp.task('watch', function() {
   return gulp.watch(['js/**/*.js', 'style/**/*.css'], ['default']);
 });

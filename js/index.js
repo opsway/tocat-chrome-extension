@@ -1322,75 +1322,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  function testAuth(serverUrl) {
-    var manifest = chrome.runtime.getManifest();
-
-    var clientId = encodeURIComponent(manifest.oauth2.client_id);
-    var scopes = encodeURIComponent(manifest.oauth2.scopes.join(' '));
-    // var redirectUri = encodeURIComponent('https://' + chrome.runtime.id + '.chromiumapp.org');
-    var redirectUri = encodeURIComponent('https://tocat.opsway.com/authenticate');
-
-    var url = 'https://accounts.google.com/o/oauth2/auth?' +
-      'access_type=offline' +
-      '&client_id=' + clientId +
-      '&response_type=code' +
-      '&redirect_uri=' + redirectUri +
-      '&scope=' + scopes;
-
-    console.log('testURL: ', url);
-
-    chrome.identity.launchWebAuthFlow({
-        'url': url,
-        'interactive':true
-      },
-      function(redirectedTo) {
-        if (chrome.runtime.lastError) {
-          // Example: Authorization page could not be loaded.
-          console.log(chrome.runtime.lastError.message);
-        }
-        else {
-          var response = redirectedTo.split('#', 2)[1];
-
-          // Example: id_token=<YOUR_BELOVED_ID_TOKEN>&authuser=0&hd=<SOME.DOMAIN.PL>&session_state=<SESSION_SATE>&prompt=<PROMPT>
-          console.log(redirectedTo);
-        }
-      }
-    );
-  }
-
-  function authenticatedXhr(method, url, callback) {
-    var retry = true;
-    function getTokenAndXhr() {
-      chrome.identity.getAuthToken({/* details */},
-        function (access_token) {
-          if (chrome.runtime.lastError) {
-            callback(chrome.runtime.lastError);
-            return;
-          }
-
-          var xhr = new XMLHttpRequest();
-          xhr.open(method, url);
-          xhr.setRequestHeader('Authorization',
-            'Bearer ' + access_token);
-
-          xhr.onload = function () {
-            if (this.status === 401 && retry) {
-              // This status may indicate that the cached
-              // access token was invalid. Retry once with
-              // a fresh token.
-              retry = false;
-              chrome.identity.removeCachedAuthToken(
-                { 'token': access_token },
-                getTokenAndXhr);
-              return;
-            }
-
-            callback(null, this.status, this.responseText);
-          }
-        });
-    }
-  }
-
   loginButton.addEventListener('click', function() {
     getAuthUrl().then(function(data) {
       hideLoginButton();
@@ -1400,55 +1331,9 @@ document.addEventListener('DOMContentLoaded', function() {
         url: data.url
       });
 
-      /*port.postMessage({
+      port.postMessage({
         name: 'getToken'
-      });*/
-
-      // https://accounts.google.com/o/oauth2/auth?access_type=offline&client_id=641843524050-oic7glk3tu44o8nvlngulfmtrtv62rqu.apps.googleusercontent.com&redirect_uri=https://tocat.opsway.com/authenticate&response_type=code&scope=https://www.googleapis.com/auth/userinfo.email
-      // https://accounts.google.com/o/oauth2/auth?client_id=158247504949-3grgaccf3iflq6l0dophe4a7kcapnqd7.apps.googleusercontent.com&response_type=id_token&access_type=offline&redirect_uri=https%3A%2F%2Fkhdfmegnlgloehahkdblifecbmgdkndn.chromiumapp.org&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email
-
-      // testAuth(data.url);
-
-      /*chrome.identity.launchWebAuthFlow(
-        {'url': test1, 'interactive': true},
-        function(redirect_url) {
-          if (!chrome.runtime.lastError) {
-            if (redirect_url) {
-
-              console.log('READY! redirect_url: ', redirect_url);
-
-              // https://odhmjbnlbbmepdhbdhpfjnhngniadfoo.chromiumapp.org/provider_cb#authToken=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2VtYWlsIjoiYW5iYWxAb3Bzd2F5LmNvbSIsImV4cCI6MTUwOTQ1NzY1NH0.AbLfi2KOJXexKmcLkM2WavmAflwXQcSUGBFKnncTfCw
-
-              var message = redirect_url.split('#')[1];
-              var authToken = message.split('=')[1];
-
-              port.postMessage({
-                name: 'setToken',
-                token: authToken
-              });
-
-              port.postMessage({
-                name: 'getToken'
-              });
-
-            } else {
-              console.log('redirect_url: ', redirect_url);
-              addAuthError('Authorization failed');
-              /!*chrome.identity.launchWebAuthFlow(
-                { 'url': 'https://accounts.google.com/logout' },
-                function() {}
-              );*!/
-            }
-          } else {
-            console.log('chrome.runtime.lastError: ', chrome.runtime.lastError);
-            addAuthError('Authorization failed');
-            /!*chrome.identity.launchWebAuthFlow(
-              { 'url': 'https://accounts.google.com/logout' },
-              function() {}
-            );*!/
-          }
-      });*/
-
+      });
     }, errorCather);
   });
 
