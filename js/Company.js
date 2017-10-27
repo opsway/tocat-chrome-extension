@@ -34,7 +34,7 @@ function Company() {
         }
       });
     });
-  }
+  };
 
   this.getUser = function(userId) {
     return _getEmployees().then(function(employees) {
@@ -42,7 +42,7 @@ function Company() {
         return o.id === userId;
       });
     });
-  }
+  };
 
 
   this.reset = function() {

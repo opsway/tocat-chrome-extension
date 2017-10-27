@@ -1,7 +1,20 @@
 'use strict';
 
-var targetPageHash = '#attendance/entry/calendarview';
+var table = {
+    rowSelector: '.ZPLRow',
+    userSelector: '.ZPusrName b'
+  };
 
-if (window.location.hash === targetPageHash) {
-  console.log('Content zoho hr!');
+console.log('Content zoho hr! Hash: %s', window.location.hash);
+
+
+chrome.runtime.onMessage.addListener(
+  function(request, sender, sendResponse) {
+    if (request.isAuth)
+      init();
+  });
+
+function init() {
+  table.body = document.getElementById('ZPAtt_attmonthlyReportTableBody');
+  console.log('table: ', table);
 }

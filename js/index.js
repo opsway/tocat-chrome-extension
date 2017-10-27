@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', function() {
     checkboxExpense = document.getElementById('checkbox-expense'),
     me = new I(),
     company = new Company(),
-    appId = 'odhmjbnlbbmepdhbdhpfjnhngniadfoo',
     users = [],
     port = chrome.extension.connect({name: "connection with background"}),
     // task is global variable. Redo it
@@ -1342,14 +1341,16 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   logoutButton.addEventListener('click', function() {
-    localStorage.tocatToken = '';
     hideContent();
     chrome.browserAction.setBadgeText({text: ''});
     me.logOut();
-    company.logOut();
+    company.reset();
     port.postMessage({
-      name: 'getToken'
+      name: 'logout'
     });
+    /*port.postMessage({
+      name: 'getToken'
+    });*/
   });
 
 });
