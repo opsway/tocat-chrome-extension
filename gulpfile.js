@@ -24,12 +24,19 @@ gulp.task('move-content-styles', function() {
     .pipe(gulp.dest(paths.build + '/css/content'));
 });
 
-gulp.task('concat-scripts', ['move-content-scripts'], function() {
+gulp.task('js-libs', function() {
   return gulp.src([
-    paths.node + '/jquery/dist/jquery.min.js',
-    paths.node + '/lodash/lodash.min.js',
-    paths.node + '/bootstrap/dist/js/bootstrap.min.js',
-    paths.node + '/bootbox/bootbox.min.js',
+      paths.node + '/jquery/dist/jquery.min.js',
+      paths.node + '/lodash/lodash.min.js',
+      paths.node + '/bootstrap/dist/js/bootstrap.min.js',
+      paths.node + '/bootbox/bootbox.min.js'])
+    .pipe(concat('libs.js'))
+    .pipe(gulp.dest(paths.build + '/js'));
+});
+
+gulp.task('concat-scripts', ['js-libs', 'move-content-scripts'], function() {
+  return gulp.src([
+    paths.build + '/js/libs.js',
     './js/editableGrid/editablegrid.js',
     './js/editableGrid/editablegrid_charts.js',
     './js/editableGrid/editablegrid_editors.js',

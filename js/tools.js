@@ -1,4 +1,4 @@
-if (!chrome.runtime) {
+/*if (!chrome.runtime) {
   // Chrome 20-21
   chrome.runtime = chrome.extension;
 } else if(!chrome.runtime.onMessage) {
@@ -7,13 +7,12 @@ if (!chrome.runtime) {
   chrome.runtime.sendMessage = chrome.extension.sendMessage;
   chrome.runtime.onConnect = chrome.extension.onConnect;
   chrome.runtime.connect = chrome.extension.connect;
-}
+}*/
 
 var TOCAT_TOOLS = (function() {
   var counterRequest = 0,
     counterResponse = 0,
     tocatToken = '',
-    port = chrome.extension.connect({name: "connection with background"}),
     urlTocat = 'https://tocat.opsway.com';
 
   // show and hide spinner
