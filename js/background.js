@@ -85,6 +85,10 @@ chrome.tabs.onActivated.addListener(function() {
     protocol = TOCAT_TOOLS.getProtocolFromUrl(url);
     full = protocol + '://' + domain;
 
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+      chrome.tabs.sendMessage(tabs[0].id, {isAuth: isAuth});
+    });
+
     if (localStorage.tocatToken && TOCAT_TOOLS.isDomainStored(full)) {
       TOCAT_TOOLS.updateIcon(url);
     } else {

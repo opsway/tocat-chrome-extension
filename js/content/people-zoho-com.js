@@ -1,14 +1,25 @@
 'use strict';
 
-var timelog = [];
+var timelog = [], isInitiated = false;
+
+/**
+ * Process messages from the background script
+ */
 
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
     if (request.isAuth)
       addAssets().then(function () {
-        init();
+        if (!isInitiated) {
+          isInitiated = true;
+          init();
+        }
       });
   });
+
+/**
+ * Inject resources into the page
+ */
 
 function addAssets() {
   return new Promise(function(resolve, reject) {
@@ -26,6 +37,10 @@ function addAssets() {
     document.head.appendChild(script);
   });
 }
+
+/**
+ * Render legend
+ */
 
 function composeLegend() {
   var legends = [{
@@ -54,9 +69,22 @@ function composeLegend() {
   legendContainer.innerHTML = legendHtml;
 }
 
+/**
+ * Format date as YYYY-MM-DD
+ *
+ * @param {Date} date
+ * @returns {string}
+ */
+
 function renderDate(date) {
   return date.getFullYear() + '-' + date.getMonth() + '-' + date.getDate();
 }
+
+/**
+ * Get first and last day of current month
+ *
+ * @returns {{firstDay: string, lastDay: string}}
+ */
 
 function getDatePeriod() {
   var date = new Date(),
@@ -68,6 +96,12 @@ function getDatePeriod() {
     lastDay: renderDate(lastDay)
   };
 }
+
+/**
+ * GET info about selected users
+ *
+ * @param {Array} users
+ */
 
 function getUsersInfo(users) {
   return new Promise(function(resolve, reject) {
@@ -93,6 +127,8 @@ function getUsersInfo(users) {
 }
 
   /**
+   * POST approval info about selected day for selected user
+   *
    * @param {String} userId
    * @param {String} date
    * @param {String} leaveType: working/sick_paid/unpaid
@@ -100,39 +136,80 @@ function getUsersInfo(users) {
    */
 
 function approveDay(userId, date, leaveType, percentage) {
-  var request = new XMLHttpRequest(),
-    dayLeaveType = leaveType || 'working',
-    dayPercentage = percentage || 1.0;
+  return new Promise(function(resolve, reject) {
+    var request = new XMLHttpRequest(),
+      dayLeaveType = leaveType || 'working',
+      dayPercentage = percentage || 1.0, body;
 
-  request.open('POST', 'https://private-anon-ad8ae34bbd-tocat.apiary-mock.com/timelog/?date_start=2016-05-05&date_end=2016-05-06&users=ansam,alsan,dekul');
+    body = {
+      date: date,
+      percentage: dayLeaveType === 'working' ? dayPercentage : null,
+      leave_type: dayLeaveType
+    };
 
-  request.setRequestHeader('Content-Type', 'application/json');
+    request.open('POST', 'https://private-anon-ad8ae34bbd-tocat.apiary-mock.com/timelog/?date_start=2016-05-05&date_end=2016-05-06&users=ansam,alsan,dekul');
 
-  request.onreadystatechange = function () {
-    if (this.readyState === 4) {
-      console.log('Status:', this.status);
-      console.log('Headers:', this.getAllResponseHeaders());
-      console.log('Body:', this.responseText);
-    }
-  };
+    request.setRequestHeader('Content-Type', 'application/json');
 
-  var body = {
-    date: date,
-    percentage: dayLeaveType === 'working' ? dayPercentage : null,
-    leave_type: dayLeaveType
-  };
+    request.onreadystatechange = function () {
+      if (this.readyState === 4) {
+        console.log('Status:', this.status);
+        console.log('Headers:', this.getAllResponseHeaders());
+        console.log('Body:', this.responseText);
+      }
+    };
 
-  request.send(JSON.stringify(body));
+    request.onload = function() {
+      var status = request.status;
+
+      if (status >= 200 && status < 400) {
+        resolve(request.response);
+      } else {
+        reject(request.response);
+      }
+    };
+
+    request.send(JSON.stringify(body));
+  });
 }
+
+/**
+ * Open modal to approve selected day of current month for selected user
+ *
+ * @param {String} userId
+ * @param {Number} day (1..31)
+ */
 
 function openApproveModal(userId, day) {
   var currentDate = new Date(),
-    date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day + 1),
-    modalHtml = '';
+    date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day),
+    dateFormatted = renderDate(date),
+    approvalOptions = {
+      w100: {
+        leave_type: 'working',
+        percentage: 1
+      },
+      w50: {
+        leave_type: 'working',
+        percentage: 0.5
+      },
+      w25: {
+        leave_type: 'working',
+        percentage: 0.25
+      },
+      s100: {
+        leave_type: 'sick_paid',
+        percentage: null
+      },
+      u0: {
+        leave_type: 'unpaid',
+        percentage: null
+      }
+    };
 
   bootbox.dialog({
-    title: userId + ' (' + renderDate(date) + ')',
-    message: '<form class="container form-horizontal">' +
+    title: userId + ' (' + dateFormatted + ')',
+    message: '<form id="approvalForm" class="container form-horizontal">' +
     '<div class="form-group"><input id="hours100" type="radio" name="hours" value="w100" checked><label class="control-label" for="hours100"> - 100% working day</label></div>' +
     '<div class="form-group"><input id="hours50" type="radio" name="hours" value="w50"><label class="control-label" for="hours50"> - 50% working day</label></div>' +
     '<div class="form-group"><input id="hours25" type="radio" name="hours" value="w25"><label class="control-label" for="hours25"> - 25% working day</label></div>' +
@@ -142,18 +219,29 @@ function openApproveModal(userId, day) {
     buttons: {
       cancel: {
         label: "Cancel",
-        className: 'btn-danger'
+        className: 'btn-default'
       },
       ok: {
         label: "Save",
         className: 'btn-success',
         callback: function () {
-          console.log('clicked save');
+          var approvalForm = document.getElementById('approvalForm'),
+            checkedValue = approvalForm.elements['hours'].value;
+
+          console.log('Checked: %s Which stands for: %o', checkedValue, approvalOptions[checkedValue]);
+
+          approveDay(userId, dateFormatted, approvalOptions[checkedValue].leave_type, approvalOptions[checkedValue].percentage).then(function (response) {
+            console.log('POST response: ', response);
+          });
         }
       }
     }
   });
 }
+
+/**
+ * Initiate content script
+ */
 
 function init() {
   var table = document.getElementById('ZPAtt_attmonthlyReportTableBody'),
@@ -169,7 +257,7 @@ function init() {
 
     usersList.push(userId);
 
-    // remove first cell from list with user name
+    // remove first cell from list (with user name)
     cells.splice(0, 1);
 
     cells.map(function (cell, index) {
@@ -178,12 +266,12 @@ function init() {
       }
 
       cell.onclick = function () {
-        openApproveModal(userId, index);
+        openApproveModal(userId, index + 1);
       }
     });
 
     users[userId] = cells;
-    console.log('users: ', users);
+    console.log('Parsed users: ', users);
   });
 
   getUsersInfo(usersList).then(function (response) {
