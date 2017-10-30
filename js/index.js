@@ -1010,11 +1010,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function setAccessabilityOfSelectResolver() {
-    if (checkAccessControl(TASK_ACL.MODIFY_RESOLVER)) {
-      selectResolver.disabled = false;
-    } else {
-      selectResolver.disabled = true;
-    }
+    selectResolver.disabled = !checkAccessControl(TASK_ACL.MODIFY_RESOLVER);
   }
 
   function setAccessabilityOfChangeOrders() {
@@ -1041,11 +1037,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function setAccessabilityOfAcceptedCheckbox() {
-    if (checkAccessControl(TASK_ACL.MODIFY_ACCEPTED)) {
-      checkboxAccepted.disabled = false;
-    } else {
-      checkboxAccepted.disabled = true;
-    }
+    checkboxAccepted.disabled = !checkAccessControl(TASK_ACL.MODIFY_ACCEPTED);
   }
 
   function setAccessabilityOfExpenseCheckbox() {
