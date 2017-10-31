@@ -2,27 +2,16 @@
 
 (function () {
   var timelog = [],
+    usersParsed = {},
     isAuth = false,
     isInitiated = false,
     isContentLoaded = false,
-    spinnerHtml = '<div id="spinner" class="content-spinner hidden">\n' +
-      '        <div class="sk-circle">\n' +
-      '            <div class="sk-circle1 sk-child"></div>\n' +
-      '            <div class="sk-circle2 sk-child"></div>\n' +
-      '            <div class="sk-circle3 sk-child"></div>\n' +
-      '            <div class="sk-circle4 sk-child"></div>\n' +
-      '            <div class="sk-circle5 sk-child"></div>\n' +
-      '            <div class="sk-circle6 sk-child"></div>\n' +
-      '            <div class="sk-circle7 sk-child"></div>\n' +
-      '            <div class="sk-circle8 sk-child"></div>\n' +
-      '            <div class="sk-circle9 sk-child"></div>\n' +
-      '            <div class="sk-circle10 sk-child"></div>\n' +
-      '            <div class="sk-circle11 sk-child"></div>\n' +
-      '            <div class="sk-circle12 sk-child"></div>\n' +
-      '        </div>\n' +
-      '    </div>',
-    notificationHtml = '<div id="tocat-notification" class="tocat-notification-container"><div class="tocat-notification"></div></div>',
+    apiUrl = 'https://private-anon-ad8ae34bbd-tocat.apiary-mock.com/timelog',
     spinner, notification;
+
+  /**
+   * Spinner tools
+   */
 
   function showSpinner() {
     spinner.classList.remove('hidden');
@@ -36,6 +25,10 @@
       spinner.classList.remove('fadeOut');
     }, 350);
   }
+
+  /**
+   * Notifications tools
+   */
 
   function showNotification(message, type) {
     var messageType = type || 'success';
@@ -161,8 +154,14 @@
    * @returns {string}
    */
 
-  function renderDate(date) {
-    return date.getFullYear() + '-' + date.getMonth() + '-' + date.getDate();
+  function renderDate(date, delimiter) {
+    var dateFormatted = date.getFullYear() + '-' + date.getMonth() + '-' + date.getDate();
+
+    if (delimiter) {
+      dateFormatted = date.getDate() + '/' + date.getMonth() + '/' + date.getFullYear();
+    }
+
+    return dateFormatted;
   }
 
   /**
@@ -188,13 +187,12 @@
    * @param {Array} users
    */
 
-  function getUsersInfo(users) {
+  function getTimelog(users) {
     return new Promise(function(resolve, reject) {
       var xhr = new XMLHttpRequest(),
         timePeriod = getDatePeriod();
 
-      console.log(timePeriod);
-      xhr.open('GET', 'https://private-anon-ad8ae34bbd-tocat.apiary-mock.com/timelog/?date_start=' + timePeriod.firstDay + '&date_end=' + timePeriod.lastDay + '&users=' + users.join(','), true);
+      xhr.open('GET', apiUrl + '/?date_start=' + timePeriod.firstDay + '&date_end=' + timePeriod.lastDay + '&users=' + users.join(','), true);
       xhr.responseType = 'json';
 
       xhr.onload = function() {
@@ -211,6 +209,10 @@
     });
   }
 
+  function getTimelogDetailed(date) {
+    return TOCAT_TOOLS.getJSON(apiUrl + '/' + date + '/');
+  }
+
   /**
    * POST approval info about selected day for selected user
    *
@@ -224,7 +226,8 @@
     return new Promise(function(resolve, reject) {
       var request = new XMLHttpRequest(),
         dayLeaveType = leaveType || 'working',
-        dayPercentage = percentage || 1.0, body;
+        dayPercentage = percentage || 1.0,
+        body;
 
       body = {
         date: date,
@@ -232,7 +235,7 @@
         leave_type: dayLeaveType
       };
 
-      request.open('POST', 'https://private-anon-ad8ae34bbd-tocat.apiary-mock.com/timelog/?date_start=2016-05-05&date_end=2016-05-06&users=ansam,alsan,dekul');
+      request.open('POST', apiUrl + '/?date_start=2016-05-05&date_end=2016-05-06&users=ansam,alsan,dekul');
 
       request.setRequestHeader('Content-Type', 'application/json');
 
@@ -268,7 +271,6 @@
   function openApproveModal(userId, day) {
     var currentDate = new Date(),
       date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day),
-      dateFormatted = renderDate(date),
       approvalOptions = {
         w100: {
           leave_type: 'working',
@@ -303,18 +305,24 @@
       },
       issues = {
         id: 'tocat-issues',
-        content: ''
-      };
+        data: [],
+        totalHours: 0,
+        content: '<span class="fa fa-spinner fa-spin"></span>'
+      },
+      approvalModal, template;
 
     Object.keys(approvalOptions).forEach(function (option) {
       var defaultChecked = approvalOptions[option].checked ? 'checked' : '';
 
-      form.content += '<div class="form-group"><input id="' + option + '" type="radio" name="hours" value="' + option + '" ' + defaultChecked + '><label class="control-label" for="' + option + '"> - ' + approvalOptions[option].description + '</label></div>';
+      form.content += '<div class="form-group"><input id="' + option + '" type="radio" name="hours" value="' + option + '" ' + defaultChecked + '><label class="control-label" for="' + option + '">' + approvalOptions[option].description + '</label></div>';
     });
 
-    bootbox.dialog({
-      title: userId + ' (' + dateFormatted + ')',
-      message: '<form id="' + form.id + '" class="container form-horizontal">' + form.content + '</form>',
+    template = '<form id="' + form.id + '" class="tocat-form">' + form.content + '</form>' +
+      '<div id="' + issues.id + '" class="tocat-issues-container">' + issues.content + '</div>';
+
+    approvalModal = bootbox.dialog({
+      title: usersParsed[userId].name + ' (' + renderDate(date, '/') + ')',
+      message: template,
       buttons: {
         cancel: {
           label: "Cancel",
@@ -328,13 +336,45 @@
               checkedValue = approvalForm.elements['hours'].value;
 
             console.log('Checked: %s Which stands for: %o', checkedValue, approvalOptions[checkedValue]);
+            showSpinner();
 
-            approveDay(userId, dateFormatted, approvalOptions[checkedValue].leave_type, approvalOptions[checkedValue].percentage).then(function (response) {
+            approveDay(userId, renderDate(date), approvalOptions[checkedValue].leave_type, approvalOptions[checkedValue].percentage).then(function (response) {
               console.log('POST response: ', response);
+              hideSpinner();
+              showNotification('Updated successfully!');
+            }, function () {
+              hideSpinner();
+              showNotification('TOCAT Server error occurred!', 'error');
             });
           }
         }
       }
+    });
+
+    approvalModal.init(function(){
+      var $issues = approvalModal.find('#' + issues.id);
+
+      console.log(approvalModal, $issues);
+
+      // renderDate(date)
+      getTimelogDetailed('2016-05-06').then(function (response) {
+        console.log('Detailed timelog for %s: %o', renderDate(date), response);
+
+        if (response.issues.length > 0) {
+          issues.content = '<table class="tocat-table"><tr><th>ISSUES</th><th>Time</th></tr>';
+
+          response.issues.map(function (issue) {
+            issues.totalHours += issue.hours;
+            issues.content += '<tr class="tocat-issues-content"><td><a href="https://opsway.atlassian.net/browse/' + issue.issue_key + '" target="_blank">' + issue.issue_key + '</a></td><td>' + issue.hours + 'h</td></tr>';
+          });
+
+          issues.content += '<tr><td>TOTAL</td><td>' + issues.totalHours + 'h</td></tr></table>';
+        } else {
+          issues.content = '<b>No logged time in issues</b>';
+        }
+
+        $issues.html(issues.content);
+      });
     });
   }
 
@@ -345,17 +385,14 @@
   function init() {
     var table = document.getElementById('ZPAtt_attmonthlyReportTableBody'),
       rows = [].slice.call(table.getElementsByClassName('ZPLRow')),
-      users = {},
       usersList = [];
 
     spinner = document.getElementById('spinner');
     notification = document.getElementById('tocat-notification');
 
-    showSpinner();
-    composeLegend();
-
     [].map.call(rows, function (row) {
       var userId = row.firstChild.children[1].children[0].children[0].innerText,
+        userName = row.firstChild.children[1].children[0].lastChild.textContent,
         cells = [].slice.call(row.childNodes);
 
       usersList.push(userId);
@@ -368,6 +405,10 @@
           cell.classList.remove('WStripe');
         }
 
+        if (cell.classList.contains('WKend')) {
+          cell.classList.remove('WKend');
+        }
+
         cell.onclick = function () {
           if (isAuth) {
             openApproveModal(userId, index + 1);
@@ -377,19 +418,29 @@
         }
       });
 
-      users[userId] = cells;
-      console.log('Parsed users: ', users);
+      usersParsed[userId] = {
+        name: userName,
+        cells: cells
+      };
+      console.log('Parsed users: ', usersParsed);
     });
 
-    getUsersInfo(usersList).then(function (response) {
-      timelog = response.result;
-      isContentLoaded = true;
-      hideSpinner();
-      console.log('Timelog from server: ', timelog);
-    }, function () {
-      isContentLoaded = true;
-      hideSpinner();
-      showNotification('TOCAT Server error occurred!', 'error');
-    });
+    if (isAuth) {
+      showSpinner();
+      composeLegend();
+
+      getTimelog(usersList).then(function (response) {
+        timelog = response.result;
+        isContentLoaded = true;
+        hideSpinner();
+        console.log('Timelog from server: ', timelog);
+      }, function () {
+        isContentLoaded = true;
+        hideSpinner();
+        showNotification('TOCAT Server error occurred!', 'error');
+      });
+    } else {
+      showNotification('You are not authenticated in TOCAT plugin', 'error');
+    }
   }
 })();

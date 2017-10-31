@@ -24,6 +24,12 @@ gulp.task('move-content-styles', function() {
     .pipe(gulp.dest(paths.build + '/css/content'));
 });
 
+gulp.task('tools-js', function() {
+  return gulp.src(['./js/tools.js'])
+    .pipe(concat('tools.js'))
+    .pipe(gulp.dest(paths.build + '/js'));
+});
+
 gulp.task('js-libs', function() {
   return gulp.src([
       paths.node + '/jquery/dist/jquery.min.js',
@@ -34,7 +40,7 @@ gulp.task('js-libs', function() {
     .pipe(gulp.dest(paths.build + '/js'));
 });
 
-gulp.task('concat-scripts', ['js-libs', 'move-content-scripts'], function() {
+gulp.task('concat-scripts', ['js-libs', 'tools-js', 'move-content-scripts'], function() {
   return gulp.src([
     paths.build + '/js/libs.js',
     './js/editableGrid/editablegrid.js',
@@ -47,7 +53,7 @@ gulp.task('concat-scripts', ['js-libs', 'move-content-scripts'], function() {
     './js/I.js',
     './js/Company.js',
     './js/index.js'])
-    .pipe(concat('assets.js'))
+    .pipe(concat('popup.js'))
     .pipe(gulp.dest(paths.build + '/js'));
 });
 

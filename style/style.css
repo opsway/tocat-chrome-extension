@@ -153,3 +153,20 @@ html {
 .cursor-p {
     cursor: pointer;
 }
+
+.fx {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: -webkit-flex;
+    display: flex;
+}
+
+.fx-x-center {
+    -webkit-justify-content: center;
+    justify-content: center;
+}
+
+.fx-y-center {
+    -webkit-align-items: center;
+    align-items: center;
+}
