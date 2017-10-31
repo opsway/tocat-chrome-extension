@@ -155,10 +155,10 @@
    */
 
   function renderDate(date, delimiter) {
-    var dateFormatted = date.getFullYear() + '-' + date.getMonth() + '-' + date.getDate();
+    var dateFormatted = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate();
 
     if (delimiter) {
-      dateFormatted = date.getDate() + '/' + date.getMonth() + '/' + date.getFullYear();
+      dateFormatted = date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear();
     }
 
     return dateFormatted;

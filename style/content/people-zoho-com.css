@@ -179,6 +179,15 @@
     margin-bottom: 10px;
 }
 
+.modal-header {
+    background-color: #2f363d;
+    color: #fff;
+}
+
+.bootbox-close-button.close {
+    color: #fff;
+}
+
 .tocat-issues-container {
     background-color: #f2f7fc;
 }
