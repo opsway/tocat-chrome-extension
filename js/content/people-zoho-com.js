@@ -275,27 +275,32 @@
         w100: {
           leave_type: 'working',
           percentage: 1,
+          title: '100%',
           description: '100% working day',
           checked: true
         },
         w50: {
           leave_type: 'working',
           percentage: 0.5,
+          title: '50%',
           description: '50% working day'
         },
         w25: {
           leave_type: 'working',
           percentage: 0.25,
+          title: '25%',
           description: '25% working day'
         },
         s100: {
           leave_type: 'sick_paid',
           percentage: null,
+          title: '<span class="fa fa-2x fa-stethoscope"></span>',
           description: '100% Sick/Paid'
         },
         u0: {
           leave_type: 'unpaid',
           percentage: null,
+          title: '<span class="fa fa-2x fa-plane"></span>',
           description: 'Unpaid leave'
         }
       },
@@ -339,7 +344,12 @@
             showSpinner();
 
             approveDay(userId, renderDate(date), approvalOptions[checkedValue].leave_type, approvalOptions[checkedValue].percentage).then(function (response) {
+              var approvedCell = usersParsed[userId].cells[day - 1];
+
               console.log('POST response: ', response);
+              console.log(approvedCell.firstChild.textContent);
+              approvedCell.firstChild.innerHTML = approvalOptions[checkedValue].title;
+              approvedCell.classList.add('approved');
               hideSpinner();
               showNotification('Updated successfully!');
             }, function () {
@@ -353,8 +363,6 @@
 
     approvalModal.init(function(){
       var $issues = approvalModal.find('#' + issues.id);
-
-      console.log(approvalModal, $issues);
 
       // renderDate(date)
       getTimelogDetailed('2016-05-06').then(function (response) {
@@ -374,6 +382,8 @@
         }
 
         $issues.html(issues.content);
+      }, function () {
+        $issues.html('TOCAT Server error occurred! Try again later.');
       });
     });
   }

@@ -9,13 +9,13 @@
 }
 
 .ZPLRow td.approved {
-    background: #58af48;
+    background: #ccffcc;
     color: dimgrey;
     cursor: default;
 }
 
 .approved {
-    background: #58af48;
+    background: #ccffcc;
     color: dimgrey;
 }
 
@@ -166,7 +166,7 @@
     background-color: #ff454a;
 }
 .warning {
-    background-color: dimgrey;
+    background-color: #ffd45d;
 }
 
 /* Approve modal */
