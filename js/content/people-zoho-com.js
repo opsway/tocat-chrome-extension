@@ -10,6 +10,26 @@
     spinner, notification;
 
   /**
+   * Process messages from the background script
+   */
+
+  chrome.runtime.onMessage.addListener(
+    function(request, sender, sendResponse) {
+      console.log();
+      if (request.isAuth) {
+        isAuth = true;
+        addAssets().then(function () {
+          if (!isInitiated) {
+            isInitiated = true;
+            init();
+          }
+        });
+      } else {
+        isAuth = false;
+      }
+    });
+
+  /**
    * Spinner tools
    */
 
@@ -42,25 +62,6 @@
       notification.firstChild.classList.remove(messageType);
     }, 4000);
   }
-
-  /**
-   * Process messages from the background script
-   */
-
-  chrome.runtime.onMessage.addListener(
-    function(request, sender, sendResponse) {
-      if (request.isAuth) {
-        isAuth = true;
-        addAssets().then(function () {
-          if (!isInitiated) {
-            isInitiated = true;
-            init();
-          }
-        });
-      } else {
-        isAuth = false;
-      }
-    });
 
   /**
    * Inject resources into the page
@@ -268,7 +269,7 @@
    * @param {Number} day (1..31)
    */
 
-  function openApproveModal(userId, day) {
+  function openApproveModal(userId, day, isApproved) {
     var currentDate = new Date(),
       date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day),
       approvalOptions = {
@@ -314,52 +315,61 @@
         totalHours: 0,
         content: '<span class="fa fa-spinner fa-spin"></span>'
       },
+      modalTitle = usersParsed[userId].name + ' (' + renderDate(date, '/') + ')',
       approvalModal, template;
 
     Object.keys(approvalOptions).forEach(function (option) {
-      var defaultChecked = approvalOptions[option].checked ? 'checked' : '';
+      var defaultChecked = approvalOptions[option].checked ? 'checked' : '',
+        disabled = isApproved ? 'disabled' : '';
 
-      form.content += '<div class="form-group"><input id="' + option + '" type="radio" name="hours" value="' + option + '" ' + defaultChecked + '><label class="control-label" for="' + option + '">' + approvalOptions[option].description + '</label></div>';
+      form.content += '<div class="form-group"><input id="' + option + '" type="radio" name="hours" ' + disabled + ' value="' + option + '" ' + defaultChecked + '><label class="control-label" for="' + option + '">' + approvalOptions[option].description + '</label></div>';
     });
 
     template = '<form id="' + form.id + '" class="tocat-form">' + form.content + '</form>' +
       '<div id="' + issues.id + '" class="tocat-issues-container">' + issues.content + '</div>';
 
-    approvalModal = bootbox.dialog({
-      title: usersParsed[userId].name + ' (' + renderDate(date, '/') + ')',
-      message: template,
-      buttons: {
-        cancel: {
-          label: "Cancel",
-          className: 'btn-default'
-        },
-        ok: {
-          label: "Save",
-          className: 'btn-success',
-          callback: function () {
-            var approvalForm = document.getElementById(form.id),
-              checkedValue = approvalForm.elements['hours'].value;
+    if (isApproved) {
+      approvalModal = bootbox.alert({
+        title: modalTitle,
+        message: template
+      });
+    } else {
+      approvalModal = bootbox.dialog({
+        title: modalTitle,
+        message: template,
+        buttons: {
+          cancel: {
+            label: "Cancel",
+            className: 'btn-default'
+          },
+          ok: {
+            label: "Save",
+            className: 'btn-success',
+            callback: function () {
+              var approvalForm = document.getElementById(form.id),
+                checkedValue = approvalForm.elements['hours'].value;
 
-            console.log('Checked: %s Which stands for: %o', checkedValue, approvalOptions[checkedValue]);
-            showSpinner();
+              console.log('Checked: %s Which stands for: %o', checkedValue, approvalOptions[checkedValue]);
+              showSpinner();
 
-            approveDay(userId, renderDate(date), approvalOptions[checkedValue].leave_type, approvalOptions[checkedValue].percentage).then(function (response) {
-              var approvedCell = usersParsed[userId].cells[day - 1];
+              approveDay(userId, renderDate(date), approvalOptions[checkedValue].leave_type, approvalOptions[checkedValue].percentage).then(function (response) {
+                var approvedCell = usersParsed[userId].cells[day - 1];
 
-              console.log('POST response: ', response);
-              console.log(approvedCell.firstChild.textContent);
-              approvedCell.firstChild.innerHTML = approvalOptions[checkedValue].title;
-              approvedCell.classList.add('approved');
-              hideSpinner();
-              showNotification('Updated successfully!');
-            }, function () {
-              hideSpinner();
-              showNotification('TOCAT Server error occurred!', 'error');
-            });
+                console.log('POST response: ', response);
+                console.log(approvedCell.firstChild.textContent);
+                approvedCell.firstChild.innerHTML = approvalOptions[checkedValue].title;
+                approvedCell.classList.add('approved');
+                hideSpinner();
+                showNotification('Updated successfully!');
+              }, function () {
+                hideSpinner();
+                showNotification('TOCAT Server error occurred!', 'error');
+              });
+            }
           }
         }
-      }
-    });
+      });
+    }
 
     approvalModal.init(function(){
       var $issues = approvalModal.find('#' + issues.id);
@@ -420,8 +430,10 @@
         }
 
         cell.onclick = function () {
+          var isApproved = cell.classList.contains('approved');
+
           if (isAuth) {
-            openApproveModal(userId, index + 1);
+            openApproveModal(userId, index + 1, isApproved);
           } else {
             showNotification('You are not authenticated in TOCAT plugin', 'error');
           }
