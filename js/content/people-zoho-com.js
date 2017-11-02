@@ -60,7 +60,7 @@
     setTimeout(function () {
       notification.classList.remove('active');
       notification.firstChild.classList.remove(messageType);
-    }, 4000);
+    }, 3000);
   }
 
   /**
@@ -112,7 +112,6 @@
       script.addEventListener('load', resolve);
       document.head.appendChild(script);
 
-      // $(document.body).append(spinnerHtml + notificationHtml);
       addTemplates();
     });
   }
@@ -124,16 +123,16 @@
   function composeLegend() {
     var legends = [{
         className: 'approved',
-        description: 'approved'
+        description: 'Approved'
       }, {
         className: '',
-        description: 'not approved'
+        description: 'Not approved'
       }, {
         className: 'sick text-center fa fa-2x fa-stethoscope',
-        description: 'sick paid'
+        description: 'Sick/Paid'
       }, {
         className: 'vacation text-center fa fa-2x fa-plane',
-        description: 'vacation paid'
+        description: 'Unpaid leave'
       }],
       legendHtml = '',
       legendContainer = document.getElementById('ZPAtt_mReoprt_abbr');
@@ -141,7 +140,7 @@
     legends.map(function (legend) {
       legendHtml += '<div class="legend-block">' +
         '<div class="legend-sign ' + legend.className + '"></div>' +
-        '<div class="legend-desc">- ' + legend.description + '</div>' +
+        '<div class="legend-desc">' + legend.description + '</div>' +
         '</div>';
     });
 
@@ -263,13 +262,15 @@
   }
 
   /**
-   * Open modal to approve selected day of current month for selected user
+   * Open modal to approve selected day of current month for selected user.
    *
    * @param {String} userId
    * @param {Number} day (1..31)
+   * @param {HTMLElement} cell
+   * @param {Boolean} isApproved
    */
 
-  function openApproveModal(userId, day, isApproved) {
+  function openApproveModal(userId, day, cell, isApproved) {
     var currentDate = new Date(),
       date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day),
       approvalOptions = {
@@ -325,15 +326,22 @@
       form.content += '<div class="form-group"><input id="' + option + '" type="radio" name="hours" ' + disabled + ' value="' + option + '" ' + defaultChecked + '><label class="control-label" for="' + option + '">' + approvalOptions[option].description + '</label></div>';
     });
 
-    template = '<form id="' + form.id + '" class="tocat-form">' + form.content + '</form>' +
-      '<div id="' + issues.id + '" class="tocat-issues-container">' + issues.content + '</div>';
-
     if (isApproved) {
+      template =
+        '<div class="circle-loader load-complete center-block">\n' +
+        '  <div class="checkmark"></div>\n' +
+        '</div>' +
+        '<div class="approved-result">' + approvalOptions[cell.getAttribute('data-leave')].description + '</div>' +
+        '<div id="' + issues.id + '" class="tocat-issues-container">' + issues.content + '</div>';
+
       approvalModal = bootbox.alert({
         title: modalTitle,
         message: template
       });
     } else {
+      template = '<form id="' + form.id + '" class="tocat-form">' + form.content + '</form>' +
+        '<div id="' + issues.id + '" class="tocat-issues-container">' + issues.content + '</div>';
+
       approvalModal = bootbox.dialog({
         title: modalTitle,
         message: template,
@@ -356,9 +364,9 @@
                 var approvedCell = usersParsed[userId].cells[day - 1];
 
                 console.log('POST response: ', response);
-                console.log(approvedCell.firstChild.textContent);
                 approvedCell.firstChild.innerHTML = approvalOptions[checkedValue].title;
                 approvedCell.classList.add('approved');
+                approvedCell.setAttribute('data-leave', checkedValue);
                 hideSpinner();
                 showNotification('Updated successfully!');
               }, function () {
@@ -372,7 +380,16 @@
     }
 
     approvalModal.init(function(){
-      var $issues = approvalModal.find('#' + issues.id);
+      var $issues = approvalModal.find('#' + issues.id),
+        checkmark = approvalModal.find('.checkmark'),
+        footer = approvalModal.find('.modal-footer');
+
+      if (isApproved) {
+        footer.addClass('hidden');
+        setTimeout(function () {
+          checkmark.addClass('draw');
+        }, 300);
+      }
 
       // renderDate(date)
       getTimelogDetailed('2016-05-06').then(function (response) {
@@ -433,7 +450,7 @@
           var isApproved = cell.classList.contains('approved');
 
           if (isAuth) {
-            openApproveModal(userId, index + 1, isApproved);
+            openApproveModal(userId, index + 1, cell, isApproved);
           } else {
             showNotification('You are not authenticated in TOCAT plugin', 'error');
           }
