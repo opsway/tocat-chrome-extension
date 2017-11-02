@@ -19,7 +19,7 @@
     "identity"
   ],
   "background": {
-    "scripts": ["build/js/background-assets.js"],
+    "scripts": ["build/js/background.js"],
     "persistent": false
   },
   "content_scripts": [
@@ -27,7 +27,7 @@
       "matches": ["https://people.zoho.com/hr*", "https://people.zoho.eu/hr*"],
       "include_globs": ["*#attendance/report/hoursreport"],
       "css": ["build/css/assets.css", "build/css/content/people-zoho-com.css"],
-      "js": ["build/js/libs.js", "build/js/tools.js", "build/js/content/people-zoho-com.js"],
+      "js": ["build/js/content/people-zoho-libs.js", "build/js/tools.js", "build/js/content/people-zoho-com.js"],
       "run_at": "document_end"
     }
   ],

@@ -1,33 +1,28 @@
 'use strict';
 
-(function () {
+(function ($) {
   var timelog = [],
     usersParsed = {},
     isAuth = false,
     isInitiated = false,
     isContentLoaded = false,
     apiUrl = 'https://private-anon-ad8ae34bbd-tocat.apiary-mock.com/timelog',
+    currentDate = new Date(),
     spinner, notification;
 
   /**
    * Process messages from the background script
    */
 
-  chrome.runtime.onMessage.addListener(
-    function(request, sender, sendResponse) {
-      console.log();
-      if (request.isAuth) {
-        isAuth = true;
-        addAssets().then(function () {
-          if (!isInitiated) {
-            isInitiated = true;
-            init();
-          }
-        });
-      } else {
-        isAuth = false;
-      }
-    });
+  chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+    isAuth = request.isAuth;
+
+    if (isAuth && !isInitiated) {
+      addAssets().then(function () {
+        init();
+      });
+    }
+  });
 
   /**
    * Spinner tools
@@ -95,6 +90,9 @@
 
     document.body.appendChild(spinnerHtml);
     document.body.appendChild(notificationHtml);
+
+    spinner = document.getElementById('spinner');
+    notification = document.getElementById('tocat-notification');
   }
 
   function addAssets() {
@@ -171,9 +169,8 @@
    */
 
   function getDatePeriod() {
-    var date = new Date(),
-      firstDay = new Date(date.getFullYear(), date.getMonth(), 1),
-      lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+    var firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1),
+      lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
     return {
       firstDay: renderDate(firstDay),
@@ -271,8 +268,7 @@
    */
 
   function openApproveModal(userId, day, cell, isApproved) {
-    var currentDate = new Date(),
-      date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day),
+    var date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day),
       approvalOptions = {
         w100: {
           leave_type: 'working',
@@ -416,16 +412,46 @@
   }
 
   /**
-   * Initiate content script
+   * Get data for selected user and date
+   *
+   * @param {String} userId
+   * @param {String} date
    */
 
-  function init() {
+  function getTimelogItem(userId, date) {
+    return timelog[userId].map(function (workday) {
+      if (workday.work_date === date) {
+        return workday;
+      }
+
+      return false;
+    });
+  }
+
+  /**
+   * Modify day cell with data
+   *
+   * @param {HTMLElement} cell
+   * @param {Object} data
+   */
+
+  function decorateCell(cell, userId, data) {
+    var day = new Date(data);
+
+    // cell.firstChild.textContent = day.getDate();
+    console.log('data: ', data);
+  }
+
+  /**
+   * Parse table from HTML and modify if with timelog data.
+   *
+   * @param {Object} data
+   */
+
+  function parseTable(data) {
     var table = document.getElementById('ZPAtt_attmonthlyReportTableBody'),
       rows = [].slice.call(table.getElementsByClassName('ZPLRow')),
       usersList = [];
-
-    spinner = document.getElementById('spinner');
-    notification = document.getElementById('tocat-notification');
 
     [].map.call(rows, function (row) {
       var userId = row.firstChild.children[1].children[0].children[0].innerText,
@@ -434,52 +460,63 @@
 
       usersList.push(userId);
 
-      // remove first cell from list (with user name)
-      cells.splice(0, 1);
+      if (data) {
+        // remove first cell from list (with user name)
+        cells.splice(0, 1);
 
-      cells.map(function (cell, index) {
-        if (cell.classList.contains('WStripe')) {
-          cell.classList.remove('WStripe');
-        }
-
-        if (cell.classList.contains('WKend')) {
-          cell.classList.remove('WKend');
-        }
-
-        cell.onclick = function () {
-          var isApproved = cell.classList.contains('approved');
-
-          if (isAuth) {
-            openApproveModal(userId, index + 1, cell, isApproved);
-          } else {
-            showNotification('You are not authenticated in TOCAT plugin', 'error');
+        cells.map(function (cell, index) {
+          if (cell.classList.contains('WStripe')) {
+            cell.classList.remove('WStripe');
           }
-        }
-      });
+
+          if (cell.classList.contains('WKend')) {
+            cell.classList.remove('WKend');
+          }
+
+          decorateCell(cell, userId, renderDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), index + 1)));
+
+          cell.onclick = function () {
+            var isApproved = cell.classList.contains('approved');
+
+            if (isAuth) {
+              openApproveModal(userId, index + 1, cell, isApproved);
+            } else {
+              showNotification('You are not authenticated in TOCAT plugin', 'error');
+            }
+          }
+        });
+      }
 
       usersParsed[userId] = {
         name: userName,
         cells: cells
       };
-      console.log('Parsed users: ', usersParsed);
     });
 
-    if (isAuth) {
-      showSpinner();
-      composeLegend();
+    console.log('Parsed users: ', usersParsed);
 
-      getTimelog(usersList).then(function (response) {
-        timelog = response.result;
-        isContentLoaded = true;
-        hideSpinner();
-        console.log('Timelog from server: ', timelog);
-      }, function () {
-        isContentLoaded = true;
-        hideSpinner();
-        showNotification('TOCAT Server error occurred!', 'error');
-      });
-    } else {
-      showNotification('You are not authenticated in TOCAT plugin', 'error');
-    }
+    return data ? false : usersList;
   }
-})();
+
+  /**
+   * Initiate content script
+   */
+
+  function init() {
+    isInitiated = true;
+    showSpinner();
+
+    getTimelog(parseTable(false)).then(function (response) {
+      timelog = response.result;
+      isContentLoaded = true;
+      hideSpinner();
+      composeLegend();
+      parseTable(timelog);
+      console.log('Timelog from server: ', timelog);
+    }, function () {
+      isContentLoaded = true;
+      hideSpinner();
+      showNotification('TOCAT Server error occurred!', 'error');
+    });
+  }
+})(jQuery);

@@ -17,6 +17,16 @@ gulp.task('move-content-scripts', function() {
     .pipe(gulp.dest(paths.build + '/js/content'));
 });
 
+gulp.task('zoho-content-scripts-libs', function() {
+  return gulp.src([
+    paths.node + '/jquery/dist/jquery.min.js',
+    paths.node + '/bootstrap/dist/js/bootstrap.min.js',
+    paths.node + '/bootbox/bootbox.min.js'
+  ])
+    .pipe(concat('people-zoho-libs.js'))
+    .pipe(gulp.dest(paths.build + '/js/content'));
+});
+
 gulp.task('move-content-styles', function() {
   return gulp.src([
     './style/content/*.css'
@@ -40,7 +50,7 @@ gulp.task('js-libs', function() {
     .pipe(gulp.dest(paths.build + '/js'));
 });
 
-gulp.task('concat-scripts', ['js-libs', 'tools-js', 'move-content-scripts'], function() {
+gulp.task('concat-scripts', ['zoho-content-scripts-libs', 'js-libs', 'tools-js', 'move-content-scripts'], function() {
   return gulp.src([
     paths.build + '/js/libs.js',
     './js/editableGrid/editablegrid.js',
@@ -62,7 +72,7 @@ gulp.task('concat-background-scripts', function() {
     './js/tools.js',
     './js/background.js'
   ])
-  .pipe(concat('background-assets.js'))
+  .pipe(concat('background.js'))
   .pipe(gulp.dest(paths.build + '/js'));
 });
 
