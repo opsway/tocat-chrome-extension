@@ -18,6 +18,8 @@
     isAuth = request.isAuth;
 
     if (isAuth && !isInitiated) {
+      TOCAT_TOOLS.setTokenHeader(request.token);
+
       addAssets().then(function () {
         init();
       });
@@ -193,25 +195,9 @@
    */
 
   function getTimelog(users) {
-    return new Promise(function(resolve, reject) {
-      var xhr = new XMLHttpRequest(),
-        timePeriod = getDatePeriod();
+    var timePeriod = getDatePeriod();
 
-      xhr.open('GET', apiUrl + '/?date_start=' + timePeriod.firstDay + '&date_end=' + timePeriod.lastDay + '&users=' + users.join(','), true);
-      xhr.responseType = 'json';
-
-      xhr.onload = function() {
-        var status = xhr.status;
-
-        if (status >= 200 && status < 400) {
-          resolve(xhr.response);
-        } else {
-          reject(xhr.response);
-        }
-      };
-
-      xhr.send();
-    });
+    return TOCAT_TOOLS.getJSON('/timelogs?date_start=' + timePeriod.firstDay + '&date_end=' + timePeriod.lastDay + '&user_id=' + users.join(','));
   }
 
   function getTimelogDetailed(date) {
@@ -427,8 +413,15 @@
    */
 
   function getTimelogItem(userId, date) {
-    return timelog[userId].map(function (workday) {
-      if (workday.work_date === date) {
+    var requestedDay = new Date(date);
+
+    return timelog[userId].filter(function (workday) {
+      var currentDay = new Date(workday.work_date);
+
+      console.log('compare: %s and %s', currentDay.getDay(), requestedDay.getDay());
+      console.log('compare: %s AND %s', workday.work_date, date);
+
+      if (currentDay.getDate() === requestedDay.getDate()) {
         return workday;
       }
 
@@ -440,14 +433,14 @@
    * Modify day cell with data
    *
    * @param {HTMLElement} cell
-   * @param {Object} data
+   * @param {String} userId
+   * @param {String} date
    */
 
-  function decorateCell(cell, userId, data) {
-    var day = new Date(data);
+  function decorateCell(cell, userId, date) {
+    var data = getTimelogItem(userId, date)[0];
 
-    // cell.firstChild.textContent = day.getDate();
-    console.log('data: ', data);
+    cell.firstChild.textContent = data ? data.hours + 'h' : '-';
   }
 
   /**

@@ -21,7 +21,7 @@ function isTokenExpired() {
 
 function sendDataToContent() {
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-    chrome.tabs.sendMessage(tabs[0].id, {isAuth: isAuth});
+    chrome.tabs.sendMessage(tabs[0].id, {isAuth: isAuth, token: localStorage.tocatToken});
   });
 }
 
@@ -121,7 +121,9 @@ function initAuth(url) {
               localStorage.tokenUpdatedAt = Date.now();
               isAuth = true;
 
-              sendDataToContent();
+              chrome.storage.sync.set({token: localStorage.tocatToken, isAuth: isAuth}, function() {
+                sendDataToContent();
+              });
 
               chrome.tabs.onUpdated.removeListener(googleAuthorizationHook);
               chrome.tabs.remove(tabId, function () {

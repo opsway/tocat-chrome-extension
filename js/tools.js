@@ -33,12 +33,14 @@ var TOCAT_TOOLS = (function() {
   function getJSONRequest(url) {
     console.log('GET ', url);
     return new Promise(function(resolve, reject) {
-      var xhr = new XMLHttpRequest();
+      var xhr = new XMLHttpRequest(),
+        requestUrl = url.indexOf('/') === 0 ? urlTocat + url : url;
+
       counterRequest += 1;
       checkCounters();
-      xhr.open('get', encodeURI(url), true);
-      if (localStorage.tocatToken) {
-        xhr.setRequestHeader('Authorization', localStorage.tocatToken);
+      xhr.open('get', encodeURI(requestUrl), true);
+      if (tocatToken) {
+        xhr.setRequestHeader('Authorization', tocatToken);
       }
       xhr.responseType = 'json';
       xhr.onload = function() {
@@ -115,7 +117,7 @@ var TOCAT_TOOLS = (function() {
       var orders = [];
       var totalBudget = null;
       if (data.length) {
-        orders = data[0].orders
+        orders = data[0].orders;
         totalBudget = 0;
         for (var i = 0 ; i < orders.length ; i++) {
           totalBudget += parseInt(orders[i].budget, 10);
@@ -200,7 +202,8 @@ var TOCAT_TOOLS = (function() {
   function isDomainStored(domain) {
     var storedDomain = JSON.parse(localStorage.storedDomains);
     bkg.console.log('storedDomain ', storedDomain);
-    return storedDomain[domain] ? true : false;
+
+    return !!storedDomain[domain];
   }
 
   return {
