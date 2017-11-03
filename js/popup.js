@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     selectResolver = document.getElementById('selectResolver'),
     checkboxAccepted = document.getElementById('checkbox-accepted'),
     checkboxExpense = document.getElementById('checkbox-expense'),
+    checkboxRequestReview = document.getElementById('checkbox-request-review'),
     me = new I(),
     company = new Company(),
     users = [],
@@ -1009,6 +1010,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  function setAccessabilityOfRequestReviewCheckbox() {
+    var checkboxRequestReview = document.getElementById('checkbox-request-review');
+
+    checkboxRequestReview.checked = checkAccessControl(TASK_ACL.CAN_REQUEST_REVIEW);
+    checkboxRequestReview.disabled = !checkAccessControl(TASK_ACL.CAN_REVIEW_TASK);
+  }
+
   function setAccessabilityOfSelectResolver() {
     selectResolver.disabled = !checkAccessControl(TASK_ACL.MODIFY_RESOLVER);
   }
@@ -1294,6 +1302,7 @@ document.addEventListener('DOMContentLoaded', function() {
               setAccessabilityOfExpenseCheckbox();
               setAccessabilityOfSelectResolver();
               setAccessabilityOfAcceptedCheckbox();
+              setAccessabilityOfRequestReviewCheckbox();
               showContent();
               setVersion();
             } else {

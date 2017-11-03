@@ -62,7 +62,7 @@ gulp.task('concat-scripts', ['zoho-content-scripts-libs', 'js-libs', 'tools-js',
     './js/tools.js',
     './js/I.js',
     './js/Company.js',
-    './js/index.js'])
+    './js/popup.js'])
     .pipe(concat('popup.js'))
     .pipe(gulp.dest(paths.build + '/js'));
 });
