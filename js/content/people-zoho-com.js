@@ -46,15 +46,23 @@
    */
 
   function showNotification(message, type) {
-    var messageType = type || 'success';
+    var messageType = type || 'success',
+      content = notification.firstChild;
 
-    notification.firstChild.innerText = message;
-    notification.firstChild.classList.add(messageType);
+    content.innerText = message;
+    content.classList.add(messageType);
     notification.classList.add('active');
 
     setTimeout(function () {
-      notification.classList.remove('active');
-      notification.firstChild.classList.remove(messageType);
+      content.classList.add('zoomIn');
+    }, 10);
+
+    setTimeout(function () {
+      content.classList.remove('zoomIn');
+      setTimeout(function () {
+        notification.classList.remove('active');
+        content.classList.remove(messageType);
+      }, 250);
     }, 3000);
   }
 
