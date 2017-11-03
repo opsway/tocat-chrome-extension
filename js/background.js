@@ -103,28 +103,34 @@ chrome.tabs.onActivated.addListener(function() {
 // Get auth token using chrome.tabs
 
 function initAuth(url) {
-  chrome.tabs.create({'url': url}, function(authenticationTab) {
-    chrome.tabs.onUpdated.addListener(function googleAuthorizationHook(tabId, changeInfo, tab) {
-      if (tabId === authenticationTab.id) {
-        var urlParts = tab.url.split('#authToken='),
-          result = urlParts[1];
+  chrome.tabs.query({'active': true, 'lastFocusedWindow': true}, function (tabs) {
+    var initialTab = tabs[0];
 
-        if (tab.status === 'complete' && urlParts.length === 2) {
-          if (localStorage.tocatToken && isTokenExpired()) {
-            localStorage.tocatToken = '';
-            localStorage.tokenUpdatedAt = '';
-          } else {
-            localStorage.tocatToken = result;
-            localStorage.tokenUpdatedAt = Date.now();
-            isAuth = true;
+    chrome.tabs.create({'url': url}, function(authenticationTab) {
+      chrome.tabs.onUpdated.addListener(function googleAuthorizationHook(tabId, changeInfo, tab) {
+        if (tabId === authenticationTab.id) {
+          var urlParts = tab.url.split('#authToken='),
+            result = urlParts[1];
 
-            sendDataToContent();
+          if (tab.status === 'complete' && urlParts.length === 2) {
+            if (localStorage.tocatToken && isTokenExpired()) {
+              localStorage.tocatToken = '';
+              localStorage.tokenUpdatedAt = '';
+            } else {
+              localStorage.tocatToken = result;
+              localStorage.tokenUpdatedAt = Date.now();
+              isAuth = true;
 
-            chrome.tabs.onUpdated.removeListener(googleAuthorizationHook);
-            chrome.tabs.remove(tabId);
+              sendDataToContent();
+
+              chrome.tabs.onUpdated.removeListener(googleAuthorizationHook);
+              chrome.tabs.remove(tabId, function () {
+                chrome.tabs.update(initialTab.id, {active: true});
+              });
+            }
           }
         }
-      }
+      });
     });
   });
 }
