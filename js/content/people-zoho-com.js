@@ -200,10 +200,6 @@
     return TOCAT_TOOLS.getJSON('/timelogs?date_start=' + timePeriod.firstDay + '&date_end=' + timePeriod.lastDay + '&user_id=' + users.join(','));
   }
 
-  function getTimelogDetailed(date) {
-    return TOCAT_TOOLS.getJSON(apiUrl + '/' + date + '/');
-  }
-
   /**
    * POST approval info about selected day for selected user
    *
@@ -250,6 +246,33 @@
 
       request.send(JSON.stringify(body));
     });
+  }
+
+  /**
+   * Generate HTML code for issues block
+   *
+   * @param {String} userId
+   * @param {String} date
+   * @returns {*}
+   */
+
+  function renderIssues(userId, date) {
+    var workday = getTimelogItem(userId, date),
+      content;
+
+    if (workday.issues.length > 0) {
+      content = '<table class="tocat-table"><tr><th>ISSUES</th><th>Time</th></tr>';
+
+      workday.issues.map(function (issue) {
+        content += '<tr class="tocat-issues-content"><td><a href="https://opsway.atlassian.net/browse/' + issue.issue_key + '" target="_blank">' + issue.issue_key + '</a></td><td>' + issue.hours + 'h</td></tr>';
+      });
+
+      content += '<tr><td>TOTAL</td><td>' + workday.hours + 'h</td></tr></table>';
+    } else {
+      content = '<b>No logged time in issues</b>';
+    }
+
+    return content;
   }
 
   /**
@@ -302,9 +325,7 @@
       },
       issues = {
         id: 'tocat-issues',
-        data: [],
-        totalHours: 0,
-        content: '<span class="fa fa-spinner fa-spin"></span>'
+        content: renderIssues(userId, date)
       },
       modalTitle = usersParsed[userId].name + ' (' + renderDate(date, '/') + ')',
       approvalModal, template;
@@ -370,8 +391,7 @@
     }
 
     approvalModal.init(function(){
-      var $issues = approvalModal.find('#' + issues.id),
-        checkmark = approvalModal.find('.checkmark'),
+      var checkmark = approvalModal.find('.checkmark'),
         footer = approvalModal.find('.modal-footer');
 
       if (isApproved) {
@@ -380,28 +400,6 @@
           checkmark.addClass('draw');
         }, 300);
       }
-
-      // renderDate(date)
-      getTimelogDetailed('2016-05-06').then(function (response) {
-        console.log('Detailed timelog for %s: %o', renderDate(date), response);
-
-        if (response.issues.length > 0) {
-          issues.content = '<table class="tocat-table"><tr><th>ISSUES</th><th>Time</th></tr>';
-
-          response.issues.map(function (issue) {
-            issues.totalHours += issue.hours;
-            issues.content += '<tr class="tocat-issues-content"><td><a href="https://opsway.atlassian.net/browse/' + issue.issue_key + '" target="_blank">' + issue.issue_key + '</a></td><td>' + issue.hours + 'h</td></tr>';
-          });
-
-          issues.content += '<tr><td>TOTAL</td><td>' + issues.totalHours + 'h</td></tr></table>';
-        } else {
-          issues.content = '<b>No logged time in issues</b>';
-        }
-
-        $issues.html(issues.content);
-      }, function () {
-        $issues.html('TOCAT Server error occurred! Try again later.');
-      });
     });
   }
 
@@ -413,13 +411,10 @@
    */
 
   function getTimelogItem(userId, date) {
-    var requestedDay = new Date(date);
+    var requestedDay = new Date(date), items;
 
-    return timelog[userId].filter(function (workday) {
+    items = timelog[userId].filter(function (workday) {
       var currentDay = new Date(workday.work_date);
-
-      console.log('compare: %s and %s', currentDay.getDay(), requestedDay.getDay());
-      console.log('compare: %s AND %s', workday.work_date, date);
 
       if (currentDay.getDate() === requestedDay.getDate()) {
         return workday;
@@ -427,6 +422,8 @@
 
       return false;
     });
+
+    return items[0] || false;
   }
 
   /**
@@ -438,7 +435,7 @@
    */
 
   function decorateCell(cell, userId, date) {
-    var data = getTimelogItem(userId, date)[0];
+    var data = getTimelogItem(userId, date);
 
     cell.firstChild.textContent = data ? data.hours + 'h' : '-';
   }
