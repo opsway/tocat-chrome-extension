@@ -126,8 +126,8 @@ function initAuth(url) {
               });
 
               chrome.tabs.onUpdated.removeListener(googleAuthorizationHook);
-              chrome.tabs.remove(tabId, function () {
-                chrome.tabs.update(initialTab.id, {active: true});
+              chrome.tabs.update(initialTab.id, {active: true}, function () {
+                chrome.tabs.remove(tabId);
               });
             }
           }

@@ -1,6 +1,6 @@
 'use strict';
 
-(function ($) {
+(function () {
   var timelog = [],
     usersParsed = {},
     isAuth = false,
@@ -18,6 +18,7 @@
     isAuth = request.isAuth;
 
     if (isAuth && !isInitiated) {
+      isInitiated = true;
       TOCAT_TOOLS.setTokenHeader(request.token);
 
       addAssets().then(function () {
@@ -32,14 +33,15 @@
 
   function showSpinner() {
     spinner.classList.remove('hidden');
-    spinner.classList.add('fadeIn');
+    setTimeout(function () {
+      spinner.classList.add('fadeIn');
+    }, 10);
   }
 
   function hideSpinner() {
-    spinner.classList.add('fadeOut');
+    spinner.classList.remove('fadeIn');
     setTimeout(function () {
       spinner.classList.add('hidden');
-      spinner.classList.remove('fadeOut');
     }, 350);
   }
 
@@ -260,7 +262,7 @@
     var workday = getTimelogItem(userId, date),
       content;
 
-    if (workday.issues.length > 0) {
+    if (workday && workday.issues.length > 0) {
       content = '<table class="tocat-table"><tr><th>ISSUES</th><th>Time</th></tr>';
 
       workday.issues.map(function (issue) {
@@ -269,7 +271,7 @@
 
       content += '<tr><td>TOTAL</td><td>' + workday.hours + 'h</td></tr></table>';
     } else {
-      content = '<b>No logged time in issues</b>';
+      content = '<div class="no-result">No logged time in issues</div>';
     }
 
     return content;
@@ -368,13 +370,11 @@
               var approvalForm = document.getElementById(form.id),
                 checkedValue = approvalForm.elements['hours'].value;
 
-              console.log('Checked: %s Which stands for: %o', checkedValue, approvalOptions[checkedValue]);
               showSpinner();
 
               approveDay(userId, renderDate(date), approvalOptions[checkedValue].leave_type, approvalOptions[checkedValue].percentage).then(function (response) {
                 var approvedCell = usersParsed[userId].cells[day - 1];
 
-                console.log('POST response: ', response);
                 approvedCell.firstChild.innerHTML = approvalOptions[checkedValue].title;
                 approvedCell.classList.add('approved');
                 approvedCell.setAttribute('data-leave', checkedValue);
@@ -437,6 +437,7 @@
   function decorateCell(cell, userId, date) {
     var data = getTimelogItem(userId, date);
 
+    cell.firstChild.className = '';
     cell.firstChild.textContent = data ? data.hours + 'h' : '-';
   }
 
@@ -501,7 +502,6 @@
    */
 
   function init() {
-    isInitiated = true;
     showSpinner();
 
     getTimelog(parseTable(false)).then(function (response) {
@@ -517,4 +517,4 @@
       showNotification('TOCAT Server error occurred!', 'error');
     });
   }
-})(jQuery);
+})();
