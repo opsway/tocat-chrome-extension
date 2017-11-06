@@ -158,17 +158,23 @@
   }
 
   /**
-   * Format date as YYYY-MM-DD
+   * Format date as YYYY-MM-DD. If delimiter is present - format changed to DD-MM-YYYY.
    *
    * @param {Date} date
+   * @param {String} delimiter: default '-'
+   * @param {Boolean} shortMonth
    * @returns {string}
    */
 
-  function renderDate(date, delimiter) {
+  function renderDate(date, delimiter, shortMonth) {
     var dateFormatted = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate();
 
     if (delimiter) {
-      dateFormatted = date.getDate() + '/' + (date.getMonth() + 1) + '/' + date.getFullYear();
+      dateFormatted = date.getDate() + delimiter + (date.getMonth() + 1) + delimiter + date.getFullYear();
+    }
+
+    if (shortMonth) {
+      dateFormatted = date.getDate() + delimiter + date.toLocaleString('en-en', { month: 'short' }) + delimiter + date.getFullYear();
     }
 
     return dateFormatted;
@@ -372,7 +378,7 @@
 
               showSpinner();
 
-              approveDay(userId, renderDate(date), approvalOptions[checkedValue].leave_type, approvalOptions[checkedValue].percentage).then(function (response) {
+              approveDay(userId, renderDate(date, '-', true), approvalOptions[checkedValue].leave_type, approvalOptions[checkedValue].percentage).then(function (response) {
                 var approvedCell = usersParsed[userId].cells[day - 1];
 
                 approvedCell.firstChild.innerHTML = approvalOptions[checkedValue].title;
