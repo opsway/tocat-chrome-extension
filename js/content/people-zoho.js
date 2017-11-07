@@ -1,6 +1,6 @@
 'use strict';
 
-// (function () {
+(function () {
   var timelog = [],
     usersParsed = {},
     isAuth = false,
@@ -336,8 +336,7 @@
         content: renderIssues(userId, date)
       },
       modalTitle = usersParsed[userId].name + ' (' + renderDate(date, '/') + ')',
-      template = '<div class="modal-title">' + modalTitle + '</div>',
-      approvalModal;
+      approvalModal, template;
 
     Object.keys(approvalOptions).forEach(function (option) {
       var defaultChecked = approvalOptions[option].checked ? 'checked' : '',
@@ -360,7 +359,14 @@
       },
       beforeOpen: function () {
         var modal = document.getElementsByClassName('approve-modal')[0],
-          checkMark = modal.getElementsByClassName('checkmark')[0];
+          modalBox = modal.getElementsByClassName('tingle-modal-box')[0],
+          checkMark = modal.getElementsByClassName('checkmark')[0],
+          title = document.createElement('div');
+
+        title.className = 'tingle-modal-box__title';
+        title.textContent = modalTitle;
+
+        modalBox.prepend(title);
 
         if (isApproved) {
           setTimeout(function () {
@@ -383,20 +389,11 @@
         '</div>' +
         '<div class="approved-result">' + approvalOptions[cell.getAttribute('data-leave')].description + '</div>' +
         '<div id="' + issues.id + '" class="tocat-issues-container">' + issues.content + '</div>';
-
-      /*approvalModal = bootbox.alert({
-        title: modalTitle,
-        message: template
-      });*/
     } else {
       template = '<form id="' + form.id + '" class="tocat-form">' + form.content + '</form>' +
         '<div id="' + issues.id + '" class="tocat-issues-container">' + issues.content + '</div>';
 
-      approvalModal.addFooterBtn('Cancel', 'tingle-btn tingle-btn--primary', function() {
-        approvalModal.close();
-      });
-
-      approvalModal.addFooterBtn('Save', 'tingle-btn tingle-btn--danger', function() {
+      approvalModal.addFooterBtn('Save', 'btn btn-success tingle-btn--pull-right', function() {
         var approvalForm = document.getElementById(form.id),
           checkedValue = approvalForm.elements['hours'].value;
 
@@ -418,55 +415,13 @@
         });
       });
 
-      /*approvalModal = bootbox.dialog({
-        title: modalTitle,
-        message: template,
-        buttons: {
-          cancel: {
-            label: "Cancel",
-            className: 'btn-default'
-          },
-          ok: {
-            label: "Save",
-            className: 'btn-success',
-            callback: function () {
-              var approvalForm = document.getElementById(form.id),
-                checkedValue = approvalForm.elements['hours'].value;
-
-              showSpinner();
-
-              approveDay(userId, renderDate(date, '-', true), approvalOptions[checkedValue].leave_type, approvalOptions[checkedValue].percentage).then(function (response) {
-                var approvedCell = usersParsed[userId].cells[day - 1];
-
-                approvedCell.firstChild.innerHTML = approvalOptions[checkedValue].title;
-                approvedCell.classList.add('approved');
-                approvedCell.setAttribute('data-leave', checkedValue);
-                hideSpinner();
-                showNotification('Updated successfully!');
-              }, function () {
-                hideSpinner();
-                showNotification('TOCAT Server error occurred!', 'error');
-              });
-            }
-          }
-        }
-      });*/
+      approvalModal.addFooterBtn('Cancel', 'btn btn-default tingle-btn--pull-right', function() {
+        approvalModal.close();
+      });
     }
 
     approvalModal.setContent(template);
     approvalModal.open();
-
-    /*approvalModal.init(function(){
-      var checkmark = approvalModal.find('.checkmark'),
-        footer = approvalModal.find('.modal-footer');
-
-      if (isApproved) {
-        footer.addClass('hidden');
-        setTimeout(function () {
-          checkmark.addClass('draw');
-        }, 300);
-      }
-    });*/
   }
 
   /**
@@ -583,4 +538,4 @@
       showNotification('TOCAT Server error occurred!', 'error');
     });
   }
-// })();
+})();

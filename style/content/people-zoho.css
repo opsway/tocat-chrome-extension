@@ -227,6 +227,39 @@
     text-align: center;
 }
 
+.approve-modal {
+    background-color: rgba(169, 169, 169, 0.5);
+}
+
+.tingle-modal-box {
+    -webkit-filter: drop-shadow(0 0 5px grey);
+    filter: drop-shadow(0 0 5px grey);
+}
+
+.tingle-modal-box__title {
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    font-weight: bold;
+    font-size: 16px;
+    line-height: 1;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+}
+
+.tingle-modal-box__content {
+    padding: 15px;
+}
+
+.tingle-modal-box__footer {
+    background: none;
+    padding-top: 0;
+}
+
+.tingle-modal-box__footer button {
+    margin-left: 15px;
+}
+
 /* Approved check mark */
 
 .circle-loader {
