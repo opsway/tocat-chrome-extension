@@ -7,8 +7,7 @@
     isInitiated = false,
     isContentLoaded = false,
     apiUrl = 'https://private-anon-ad8ae34bbd-tocat.apiary-mock.com/timelog',
-    currentDate = new Date(),
-    spinner, notification;
+    filtersFirstDay, spinner, notification;
 
   /**
    * Process messages from the background script
@@ -187,12 +186,12 @@
    */
 
   function getDatePeriod() {
-    var firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1),
-      lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+    var from = new Date(document.getElementById('ZPAtt_monthlyRep_fromDate').value),
+      to = new Date(document.getElementById('ZPAtt_monthlyRep_toDate').value);
 
     return {
-      firstDay: renderDate(firstDay),
-      lastDay: renderDate(lastDay)
+      firstDay: renderDate(from),
+      lastDay: renderDate(to)
     };
   }
 
@@ -293,7 +292,7 @@
    */
 
   function openApproveModal(userId, day, cell, isApproved) {
-    var date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day),
+    var date = new Date(filtersFirstDay.getFullYear(), filtersFirstDay.getMonth(), day),
       approvalOptions = {
         w100: {
           leave_type: 'working',
@@ -351,12 +350,6 @@
       closeMethods: ['overlay', 'button', 'escape'],
       closeLabel: 'Close',
       cssClass: ['approve-modal'],
-      onOpen: function() {
-        console.log('modal open');
-      },
-      onClose: function() {
-        console.log('modal closed');
-      },
       beforeOpen: function () {
         var modal = document.getElementsByClassName('approve-modal')[0],
           modalBox = modal.getElementsByClassName('tingle-modal-box')[0],
@@ -373,12 +366,6 @@
             checkMark.classList.add('draw');
           }, 300);
         }
-      },
-      beforeClose: function() {
-        // here's goes some logic
-        // e.g. save content before closing the modal
-        return true; // close the modal
-        return false; // nothing happens
       }
     });
 
@@ -401,7 +388,7 @@
         approvalModal.close();
 
         approveDay(userId, renderDate(date, '-', true), approvalOptions[checkedValue].leave_type, approvalOptions[checkedValue].percentage).then(function (response) {
-          var approvedCell = usersParsed[userId].cells[day - 1];
+          var approvedCell = usersParsed[userId].cells[day - filtersFirstDay.getDate()];
 
           approvedCell.firstChild.innerHTML = approvalOptions[checkedValue].title;
           approvedCell.classList.add('approved');
@@ -485,6 +472,8 @@
         cells.splice(0, 1);
 
         cells.map(function (cell, index) {
+          var day = index + filtersFirstDay.getDate();
+
           if (cell.classList.contains('WStripe')) {
             cell.classList.remove('WStripe');
           }
@@ -493,13 +482,13 @@
             cell.classList.remove('WKend');
           }
 
-          decorateCell(cell, userId, renderDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), index + 1)));
+          decorateCell(cell, userId, renderDate(new Date(filtersFirstDay.getFullYear(), filtersFirstDay.getMonth(), day)));
 
           cell.onclick = function () {
             var isApproved = cell.classList.contains('approved');
 
             if (isAuth) {
-              openApproveModal(userId, index + 1, cell, isApproved);
+              openApproveModal(userId, day, cell, isApproved);
             } else {
               showNotification('You are not authenticated in TOCAT plugin', 'error');
             }
@@ -513,9 +502,24 @@
       };
     });
 
-    console.log('Parsed users: ', usersParsed);
-
     return data ? false : usersList;
+  }
+
+  /**
+   * Catch filters changes
+   */
+
+  function filtersHook() {
+    var filters = document.getElementById('ZPAtt_monthlyReportfilter'),
+      searchButton = filters.getElementsByTagName('button')[0];
+
+    searchButton.onclick = function () {
+      var users = parseTable(false);
+
+      if (users.length > 0) {
+        init();
+      }
+    };
   }
 
   /**
@@ -524,6 +528,9 @@
 
   function init() {
     showSpinner();
+    filtersHook();
+
+    filtersFirstDay = new Date(getDatePeriod().firstDay);
 
     getTimelog(parseTable(false)).then(function (response) {
       timelog = response.result;
