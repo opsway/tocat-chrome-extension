@@ -1,6 +1,6 @@
 'use strict';
 
-(function () {
+// (function () {
   var timelog = [],
     usersParsed = {},
     isAuth = false,
@@ -118,9 +118,9 @@
         + '"); }';
       document.head.appendChild(fa);
 
-      script.src = chrome.extension.getURL('build/js/libs.js');
+      script.src = chrome.extension.getURL('build/js/content/people-zoho-libs.js');
       script.addEventListener('load', resolve);
-      document.head.appendChild(script);
+      document.body.appendChild(script);
 
       addTemplates();
     });
@@ -336,13 +336,44 @@
         content: renderIssues(userId, date)
       },
       modalTitle = usersParsed[userId].name + ' (' + renderDate(date, '/') + ')',
-      approvalModal, template;
+      template = '<div class="modal-title">' + modalTitle + '</div>',
+      approvalModal;
 
     Object.keys(approvalOptions).forEach(function (option) {
       var defaultChecked = approvalOptions[option].checked ? 'checked' : '',
         disabled = isApproved ? 'disabled' : '';
 
       form.content += '<div class="form-group"><input id="' + option + '" type="radio" name="hours" ' + disabled + ' value="' + option + '" ' + defaultChecked + '><label class="control-label" for="' + option + '">' + approvalOptions[option].description + '</label></div>';
+    });
+
+    approvalModal = new tingle.modal({
+      footer: !isApproved,
+      stickyFooter: false,
+      closeMethods: ['overlay', 'button', 'escape'],
+      closeLabel: 'Close',
+      cssClass: ['approve-modal'],
+      onOpen: function() {
+        console.log('modal open');
+      },
+      onClose: function() {
+        console.log('modal closed');
+      },
+      beforeOpen: function () {
+        var modal = document.getElementsByClassName('approve-modal')[0],
+          checkMark = modal.getElementsByClassName('checkmark')[0];
+
+        if (isApproved) {
+          setTimeout(function () {
+            checkMark.classList.add('draw');
+          }, 300);
+        }
+      },
+      beforeClose: function() {
+        // here's goes some logic
+        // e.g. save content before closing the modal
+        return true; // close the modal
+        return false; // nothing happens
+      }
     });
 
     if (isApproved) {
@@ -353,15 +384,41 @@
         '<div class="approved-result">' + approvalOptions[cell.getAttribute('data-leave')].description + '</div>' +
         '<div id="' + issues.id + '" class="tocat-issues-container">' + issues.content + '</div>';
 
-      approvalModal = bootbox.alert({
+      /*approvalModal = bootbox.alert({
         title: modalTitle,
         message: template
-      });
+      });*/
     } else {
       template = '<form id="' + form.id + '" class="tocat-form">' + form.content + '</form>' +
         '<div id="' + issues.id + '" class="tocat-issues-container">' + issues.content + '</div>';
 
-      approvalModal = bootbox.dialog({
+      approvalModal.addFooterBtn('Cancel', 'tingle-btn tingle-btn--primary', function() {
+        approvalModal.close();
+      });
+
+      approvalModal.addFooterBtn('Save', 'tingle-btn tingle-btn--danger', function() {
+        var approvalForm = document.getElementById(form.id),
+          checkedValue = approvalForm.elements['hours'].value;
+
+        showSpinner();
+        approvalModal.close();
+
+        approveDay(userId, renderDate(date, '-', true), approvalOptions[checkedValue].leave_type, approvalOptions[checkedValue].percentage).then(function (response) {
+          var approvedCell = usersParsed[userId].cells[day - 1];
+
+          approvedCell.firstChild.innerHTML = approvalOptions[checkedValue].title;
+          approvedCell.classList.add('approved');
+          approvedCell.setAttribute('data-leave', checkedValue);
+          hideSpinner();
+          approvalModal.destroy();
+          showNotification('Updated successfully!');
+        }, function () {
+          hideSpinner();
+          showNotification('TOCAT Server error occurred!', 'error');
+        });
+      });
+
+      /*approvalModal = bootbox.dialog({
         title: modalTitle,
         message: template,
         buttons: {
@@ -393,10 +450,13 @@
             }
           }
         }
-      });
+      });*/
     }
 
-    approvalModal.init(function(){
+    approvalModal.setContent(template);
+    approvalModal.open();
+
+    /*approvalModal.init(function(){
       var checkmark = approvalModal.find('.checkmark'),
         footer = approvalModal.find('.modal-footer');
 
@@ -406,7 +466,7 @@
           checkmark.addClass('draw');
         }, 300);
       }
-    });
+    });*/
   }
 
   /**
@@ -523,4 +583,4 @@
       showNotification('TOCAT Server error occurred!', 'error');
     });
   }
-})();
+// })();

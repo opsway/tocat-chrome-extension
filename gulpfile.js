@@ -7,35 +7,40 @@ var gulp = require('gulp'),
   clean = require('gulp-clean'),
   paths = {
     build: './build',
-    node: './node_modules'
+    node: './node_modules',
+    scripts: './js',
+    styles: './style'
   };
 
 gulp.task('move-content-scripts', function() {
   return gulp.src([
-    './js/content/*.js'
+    paths.scripts + '/content/*.js'
   ])
     .pipe(gulp.dest(paths.build + '/js/content'));
 });
 
 gulp.task('zoho-content-scripts-libs', function() {
   return gulp.src([
-    paths.node + '/jquery/dist/jquery.min.js',
+    /*paths.node + '/jquery/dist/jquery.min.js',
     paths.node + '/bootstrap/dist/js/bootstrap.min.js',
-    paths.node + '/bootbox/bootbox.min.js'
+    paths.node + '/bootbox/bootbox.min.js'*/
+    paths.node + '/tingle.js/dist/tingle.min.js'
   ])
     .pipe(concat('people-zoho-libs.js'))
     .pipe(gulp.dest(paths.build + '/js/content'));
 });
 
-gulp.task('move-content-styles', function() {
+gulp.task('zoho-content-styles', function() {
   return gulp.src([
-    './style/content/*.css'
+    paths.node + '/tingle.js/dist/tingle.min.css',
+    paths.styles + '/content/people-zoho.css'
   ])
+    .pipe(concat('people-zoho.css'))
     .pipe(gulp.dest(paths.build + '/css/content'));
 });
 
 gulp.task('tools-js', function() {
-  return gulp.src(['./js/tools.js'])
+  return gulp.src(paths.scripts + '/tools.js')
     .pipe(concat('tools.js'))
     .pipe(gulp.dest(paths.build + '/js'));
 });
@@ -53,38 +58,38 @@ gulp.task('js-libs', function() {
 gulp.task('concat-scripts', ['zoho-content-scripts-libs', 'js-libs', 'tools-js', 'move-content-scripts'], function() {
   return gulp.src([
     paths.build + '/js/libs.js',
-    './js/editableGrid/editablegrid.js',
-    './js/editableGrid/editablegrid_charts.js',
-    './js/editableGrid/editablegrid_editors.js',
-    './js/editableGrid/editablegrid_renderers.js',
-    './js/editableGrid/editablegrid_utils.js',
-    './js/editableGrid/editablegrid_validators.js',
-    './js/tools.js',
-    './js/I.js',
-    './js/Company.js',
-    './js/popup.js'])
+    paths.scripts + '/editableGrid/editablegrid.js',
+    paths.scripts + '/editableGrid/editablegrid_charts.js',
+    paths.scripts + '/editableGrid/editablegrid_editors.js',
+    paths.scripts + '/editableGrid/editablegrid_renderers.js',
+    paths.scripts + '/editableGrid/editablegrid_utils.js',
+    paths.scripts + '/editableGrid/editablegrid_validators.js',
+    paths.scripts + '/tools.js',
+    paths.scripts + '/I.js',
+    paths.scripts + '/Company.js',
+    paths.scripts + '/popup.js'])
     .pipe(concat('popup.js'))
     .pipe(gulp.dest(paths.build + '/js'));
 });
 
 gulp.task('concat-background-scripts', function() {
   return gulp.src([
-    './js/tools.js',
-    './js/background.js'
+    paths.scripts + '/tools.js',
+    paths.scripts + '/background.js'
   ])
   .pipe(concat('background.js'))
   .pipe(gulp.dest(paths.build + '/js'));
 });
 
-gulp.task('concat-css', ['move-content-styles'], function() {
+gulp.task('concat-css', ['zoho-content-styles'], function() {
   return gulp.src([
     paths.node + '/bootstrap/dist/css/bootstrap.css',
-    "./style/app.css",
-    "./style/font-awesome.css",
-    "./style/spinkit.css",
-    "./style/style.css",
-    "./style/simple-line-icons.css",
-    "./js/editableGrid/editablegrid.css"])
+    paths.styles + '/app.css',
+    paths.styles + '/font-awesome.css',
+    paths.styles + '/spinkit.css',
+    paths.styles + '/style.css',
+    paths.styles + '/simple-line-icons.css',
+    paths.scripts + '/editableGrid/editablegrid.css'])
     .pipe(concatCss('assets.css'))
     .pipe(gulp.dest(paths.build + '/css'));
 });

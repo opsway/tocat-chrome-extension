@@ -5,7 +5,7 @@
   "version":"1.0.3",
   "description":"TOCAT plugin",
   "browser_action": {
-    "default_icon": "icon.png",
+    "default_icon": "img/icon.png",
     "default_title": "TOCAT",
     "default_popup": "popup.html"
   },
@@ -26,21 +26,21 @@
     {
       "matches": ["https://people.zoho.com/hr*", "https://people.zoho.eu/hr*"],
       "include_globs": ["*#attendance/report/hoursreport"],
-      "css": ["build/css/assets.css", "build/css/content/people-zoho-com.css"],
-      "js": ["build/js/content/people-zoho-libs.js", "build/js/tools.js", "build/js/content/people-zoho-com.js"],
+      "css": ["build/css/assets.css", "build/css/content/people-zoho.css"],
+      "js": ["build/js/content/people-zoho-libs.js", "build/js/tools.js", "build/js/content/people-zoho.js"],
       "run_at": "document_end"
     }
   ],
   "web_accessible_resources": [
     "build/css/assets.css",
-    "build/js/libs.js",
     "build/js/tools.js",
+    "build/js/content/people-zoho-libs.js",
     "fonts/*.*"
   ],
   "icons": {
-    "16": "16.png",
-    "48": "48.png",
-    "128": "128.png"
+    "16": "img/16.png",
+    "48": "img/48.png",
+    "128": "img/128.png"
   },
   "offline_enabled": false,
   "oauth2": {
