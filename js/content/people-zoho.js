@@ -6,7 +6,41 @@
     isAuth = false,
     isInitiated = false,
     isContentLoaded = false,
+    isTocatConnected = false,
     apiUrl = 'https://private-anon-ad8ae34bbd-tocat.apiary-mock.com/timelog',
+    approvalOptions = {
+      w100: {
+        leave_type: 'working',
+        percentage: 1,
+        title: '100%',
+        description: '100% working day',
+        checked: true
+      },
+      w50: {
+        leave_type: 'working',
+        percentage: 0.5,
+        title: '50%',
+        description: '50% working day'
+      },
+      w25: {
+        leave_type: 'working',
+        percentage: 0.25,
+        title: '25%',
+        description: '25% working day'
+      },
+      s100: {
+        leave_type: 'sick_paid',
+        percentage: null,
+        title: '<span class="fa fa-2x fa-stethoscope"></span>',
+        description: '100% Sick/Paid'
+      },
+      u0: {
+        leave_type: 'unpaid',
+        percentage: null,
+        title: '<span class="fa fa-2x fa-plane"></span>',
+        description: 'Unpaid leave'
+      }
+    },
     filtersFirstDay, spinner, notification;
 
   /**
@@ -21,10 +55,34 @@
       TOCAT_TOOLS.setTokenHeader(request.token);
 
       addAssets().then(function () {
-        init();
+        addSwitcher();
+
+        filtersHook();
       });
     }
   });
+
+  function addSwitcher() {
+    var switcherContainer = document.createElement('div'),
+        switcherHtml = '<input type="checkbox" name="tocat-connection" id="tocat-connection" class="checkbox-green ios-toggle"/>\n' +
+      '<label for="tocat-connection" class="checkbox-label"></label><span class="switcher-label">Tocat connection</span>',
+      filtersRow = document.getElementById('attendance-report-hoursreport'),
+      switcher;
+
+    switcherContainer.className = 'switcher-container';
+    switcherContainer.innerHTML = switcherHtml;
+    filtersRow.getElementsByClassName('col-md-4')[2].prepend(switcherContainer);
+
+    switcher = document.getElementById('tocat-connection');
+
+    switcher.onclick = function () {
+      isTocatConnected = switcher.checked;
+
+      if (isTocatConnected) {
+        init();
+      }
+    };
+  }
 
   /**
    * Spinner tools
@@ -111,17 +169,19 @@
       var fa = document.createElement('style'),
         script = document.createElement('script');
 
+      addTemplates();
+
       fa.type = 'text/css';
       fa.textContent = '@font-face { font-family: FontAwesome; src: url("'
         + chrome.extension.getURL('fonts/fontawesome-webfont.woff')
         + '"); }';
       document.head.appendChild(fa);
 
-      script.src = chrome.extension.getURL('build/js/content/people-zoho-libs.js');
-      script.addEventListener('load', resolve);
-      document.body.appendChild(script);
+      resolve();
 
-      addTemplates();
+      /*script.src = chrome.extension.getURL('build/js/content/people-zoho-libs.js');
+      script.addEventListener('load', resolve);
+      document.body.appendChild(script);*/
     });
   }
 
@@ -293,39 +353,6 @@
 
   function openApproveModal(userId, day, cell, isApproved) {
     var date = new Date(filtersFirstDay.getFullYear(), filtersFirstDay.getMonth(), day),
-      approvalOptions = {
-        w100: {
-          leave_type: 'working',
-          percentage: 1,
-          title: '100%',
-          description: '100% working day',
-          checked: true
-        },
-        w50: {
-          leave_type: 'working',
-          percentage: 0.5,
-          title: '50%',
-          description: '50% working day'
-        },
-        w25: {
-          leave_type: 'working',
-          percentage: 0.25,
-          title: '25%',
-          description: '25% working day'
-        },
-        s100: {
-          leave_type: 'sick_paid',
-          percentage: null,
-          title: '<span class="fa fa-2x fa-stethoscope"></span>',
-          description: '100% Sick/Paid'
-        },
-        u0: {
-          leave_type: 'unpaid',
-          percentage: null,
-          title: '<span class="fa fa-2x fa-plane"></span>',
-          description: 'Unpaid leave'
-        }
-      },
       form = {
         id: 'approvalForm',
         content: ''
@@ -443,10 +470,37 @@
    */
 
   function decorateCell(cell, userId, date) {
-    var data = getTimelogItem(userId, date);
+    var data = getTimelogItem(userId, date),
+      leaveTypes = {
+        w: 'Working',
+        s100: 'Sick [Paid]',
+        u0: 'Day off/Vacation'
+      },
+      leaveKey = '';
 
     cell.firstChild.className = '';
-    cell.firstChild.textContent = data ? data.hours + 'h' : '-';
+
+    if (data) {
+      if (data.approval_status) {
+        cell.className = data.approval_status ? data.approval_status.toLowerCase() : '';
+
+        if (data.leave_type) {
+          Object.keys(leaveTypes).forEach(function (key) {
+            if (leaveTypes[key] === data.leave_type) {
+              leaveKey = key;
+              if (key === 'w') {
+                leaveKey += data.percentage > 1 ? 100 : data.percentage * 100;
+              }
+            }
+          });
+
+          cell.setAttribute('data-leave', leaveKey);
+          cell.firstChild.innerHTML = approvalOptions[leaveKey].title;
+        }
+      } else {
+        cell.firstChild.textContent = data.hours > 0 ? data.hours + 'h' : '-';
+      }
+    }
   }
 
   /**
@@ -516,7 +570,7 @@
     searchButton.onclick = function () {
       var users = parseTable(false);
 
-      if (users.length > 0) {
+      if (users.length > 0 && isTocatConnected) {
         init();
       }
     };
@@ -528,7 +582,6 @@
 
   function init() {
     showSpinner();
-    filtersHook();
 
     filtersFirstDay = new Date(getDatePeriod().firstDay);
 

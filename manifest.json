@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1OknxFhZFwis5I/sLNcl+ab+lnvHjLuFJcFnXJx7tZXrYQZHO7+DPa3sCeTmasOQYkFW0ksnq+unvxaGDr6rzUhT1ZrpN2JGhRRB2+B269bnoc17rZJg5UPMz6lviIV/7KVQyAuYYXLacZb5xsJ+Tj/DEk/r04GDI0OedXLFlaMIpXADFwb8HWxWP/aQUq8+EzBWtaJjP3UgVCXTXsEPfWYxk/2Tmd8eX0tkWtCaKnqbBlEV1qHrSnEH+QxpWdxtj4OdcQ9rcKMsOd7g39OqMHjzBo5tHk0xC1yl8wvmkvqEICs8WbmIEU1Vz5dWSZ/KA1bvHRcPs7PmCN/PGBXmOQIDAQAB",
   "name":"TOCAT",
-  "version":"1.0.3",
+  "version":"1.0.4",
   "description":"TOCAT plugin",
   "browser_action": {
     "default_icon": "img/icon.png",
