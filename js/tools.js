@@ -58,10 +58,12 @@ var TOCAT_TOOLS = (function() {
 
   function deleteJSONRequest(url) {
     return new Promise(function(resolve, reject) {
-      var xhr = new XMLHttpRequest();
+      var xhr = new XMLHttpRequest(),
+        requestUrl = url.indexOf('/') === 0 ? urlTocat + url : url;
+
       counterRequest += 1;
       checkCounters();
-      xhr.open('delete', encodeURI(url), true);
+      xhr.open('delete', encodeURI(requestUrl), true);
       if (tocatToken) {
         xhr.setRequestHeader('Authorization', tocatToken);
       }
@@ -85,6 +87,7 @@ var TOCAT_TOOLS = (function() {
       var xhr = new XMLHttpRequest(),
         requestUrl = url.indexOf('/') === 0 ? urlTocat + url : url;
 
+      console.log('POST %s, token: %s', requestUrl, tocatToken);
       counterRequest += 1;
       checkCounters();
       xhr.open('post', encodeURI(requestUrl), true);
@@ -150,7 +153,7 @@ var TOCAT_TOOLS = (function() {
     var S4 = function() {
       return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
     };
-    return (S4()+S4()+"-"+S4()+"-"+S4()+"-"+S4()+"-"+S4()+S4()+S4());
+    return (S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4());
   }
 
   function setTokenHeader(token) {

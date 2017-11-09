@@ -7,7 +7,6 @@
     isInitiated = false,
     isContentLoaded = false,
     isTocatConnected = false,
-    apiUrl = 'https://private-anon-ad8ae34bbd-tocat.apiary-mock.com/timelog',
     approvalOptions = {
       w100: {
         leave_type: 'Working',
@@ -48,24 +47,31 @@
    */
 
   chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-    isAuth = request.isAuth;
+    chrome.storage.sync.get(['isAuth', 'token'], function (storage) {
+      isAuth = storage.isAuth;
+      TOCAT_TOOLS.setTokenHeader(storage.token);
 
-    if (isAuth && !isInitiated) {
-      isInitiated = true;
-      TOCAT_TOOLS.setTokenHeader(request.token);
+      console.log('storage: ', storage);
+      if (isAuth && !isInitiated) {
+        isInitiated = true;
+        TOCAT_TOOLS.setTokenHeader(request.token);
 
-      addAssets().then(function () {
-        addSwitcher();
+        addAssets().then(function () {
+          addSwitcher();
+          filtersHook();
+        });
+      }
+    });
+    console.log('request: ', request);
+    // isAuth = request.isAuth;
 
-        filtersHook();
-      });
-    }
+
   });
 
   function addSwitcher() {
     var switcherContainer = document.createElement('div'),
         switcherHtml = '<input type="checkbox" name="tocat-connection" id="tocat-connection" class="checkbox-green ios-toggle"/>\n' +
-      '<label for="tocat-connection" class="checkbox-label"></label><span class="switcher-label">Tocat connection</span>',
+      '<label for="tocat-connection" class="checkbox-label"></label><span class="switcher-label">JIRA sync</span>',
       filtersRow = document.getElementById('attendance-report-hoursreport'),
       switcher;
 
@@ -517,7 +523,7 @@
               if (isTocatConnected) {
                 openApproveModal(userId, day, cell, isApproved);
               } else {
-                showNotification('Enable TOCAT connection, please', 'error');
+                showNotification('Enable JIRA sync, please', 'error');
               }
             } else {
               showNotification('You are not authenticated in TOCAT plugin', 'error');
