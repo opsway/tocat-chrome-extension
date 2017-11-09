@@ -567,7 +567,6 @@
       hideSpinner();
       composeLegend();
       parseTable(timelog);
-      console.log('Timelog from server: ', timelog);
     }, function () {
       isContentLoaded = true;
       hideSpinner();

@@ -1,4 +1,5 @@
-var isAuth = false;
+var isAuth = false,
+  authUrl = '';
 
 bkg = chrome.extension.getBackgroundPage();
 localStorage.tocatToken = '';
@@ -13,8 +14,12 @@ function isTokenExpired() {
   var timeToLive = 7 * 24 * 60 * 60 * 1000; // 7 days
 
   if (localStorage.tokenUpdatedAt && localStorage.tokenUpdatedAt !== '') {
+    console.log('isTokenExpired: ', Date.now() - parseInt(localStorage.tokenUpdatedAt, 10) >= timeToLive);
+
     return Date.now() - parseInt(localStorage.tokenUpdatedAt, 10) >= timeToLive;
   }
+
+  console.log('isTokenExpired default: ', true);
 
   return true;
 }
@@ -33,11 +38,14 @@ chrome.extension.onConnect.addListener(function(port) {
         localStorage.tokenUpdatedAt = Date.now();
         break;
       case 'initAuth':
+        authUrl = msg.url;
+
         initAuth(msg.url);
         break;
       case 'logout':
         isAuth = false;
         localStorage.tocatToken = '';
+
         sendDataToContent();
         break;
       case 'getToken':
@@ -45,10 +53,13 @@ chrome.extension.onConnect.addListener(function(port) {
           localStorage.tokenUpdatedAt = '';
           localStorage.tocatToken = '';
         }
+
         port.postMessage({
           name: 'getToken',
           token: localStorage.tocatToken
         });
+
+        break;
       default:
         break;
     }
@@ -65,12 +76,9 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
   protocol = TOCAT_TOOLS.getProtocolFromUrl(url);
   full = protocol + '://' + domain;
 
-  console.log('onUpdated');
-  console.log('changeInfo: ', changeInfo);
-
   sendDataToContent();
 
-  if (domain && changeInfo.status == 'complete') {
+  if (domain && changeInfo.status === 'complete') {
     if (localStorage.tocatToken && TOCAT_TOOLS.isDomainStored(full)) {
       TOCAT_TOOLS.updateIcon(url);
     } else {
@@ -113,23 +121,18 @@ function initAuth(url) {
             result = urlParts[1];
 
           if (tab.status === 'complete' && urlParts.length === 2) {
-            if (localStorage.tocatToken && isTokenExpired()) {
-              localStorage.tocatToken = '';
-              localStorage.tokenUpdatedAt = '';
-            } else {
-              localStorage.tocatToken = result;
-              localStorage.tokenUpdatedAt = Date.now();
-              isAuth = true;
+            localStorage.tocatToken = result;
+            localStorage.tokenUpdatedAt = Date.now();
+            isAuth = true;
 
-              chrome.storage.sync.set({token: localStorage.tocatToken, isAuth: isAuth}, function() {
-                sendDataToContent();
-              });
+            chrome.storage.sync.set({token: localStorage.tocatToken, isAuth: isAuth}, function() {
+              sendDataToContent();
+            });
 
-              chrome.tabs.onUpdated.removeListener(googleAuthorizationHook);
-              chrome.tabs.update(initialTab.id, {active: true}, function () {
-                chrome.tabs.remove(tabId);
-              });
-            }
+            chrome.tabs.onUpdated.removeListener(googleAuthorizationHook);
+            chrome.tabs.update(initialTab.id, {active: true}, function () {
+              chrome.tabs.remove(tabId);
+            });
           }
         }
       });

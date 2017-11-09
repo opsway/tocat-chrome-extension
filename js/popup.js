@@ -1154,6 +1154,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function renderContent() {
     init();
+
     if (checkAccessControl(TASK_ACL.MODIFY_BUDGETS)) {
       updateAllOrders();
     }
@@ -1287,12 +1288,13 @@ document.addEventListener('DOMContentLoaded', function() {
   port.postMessage({
     name: 'getToken'
   });
+
   saveDomain();
 
   port.onMessage.addListener(function(msg) {
     switch (msg.name) {
       case 'getToken':
-        if (msg.token) {
+        if (msg.token && msg.token !== '') {
           TOCAT_TOOLS.setTokenHeader(msg.token);
           // me.getOrdersOfMyTeam();
           getACL().then(function () {
@@ -1317,6 +1319,8 @@ document.addEventListener('DOMContentLoaded', function() {
           hideSpinner();
           showLoginButton();
         }
+
+        break;
       default:
         break;
     }

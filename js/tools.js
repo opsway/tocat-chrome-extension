@@ -20,18 +20,17 @@ var TOCAT_TOOLS = (function() {
     setTimeout(function() {
       var spinner = document.getElementById('spinner');
 
-      if ((counterRequest == counterResponse) && spinner) {
+      if ((counterRequest === counterResponse) && spinner) {
         spinner.classList.add('hidden');
       }
 
-      if ((counterRequest != counterResponse) && spinner) {
+      if ((counterRequest !== counterResponse) && spinner) {
         spinner.classList.remove('hidden');
       }
     }, 50);
   }
 
   function getJSONRequest(url) {
-    console.log('GET ', url);
     return new Promise(function(resolve, reject) {
       var xhr = new XMLHttpRequest(),
         requestUrl = url.indexOf('/') === 0 ? urlTocat + url : url;
@@ -58,7 +57,6 @@ var TOCAT_TOOLS = (function() {
   }
 
   function deleteJSONRequest(url) {
-    console.log('DELETE ', url);
     return new Promise(function(resolve, reject) {
       var xhr = new XMLHttpRequest();
       counterRequest += 1;
@@ -70,7 +68,7 @@ var TOCAT_TOOLS = (function() {
       xhr.responseType = 'json';
       xhr.onload = function() {
         var status = xhr.status;
-        if (status == 200) {
+        if (status === 200) {
           resolve(xhr.response);
         } else {
           reject(xhr.response);
@@ -83,7 +81,6 @@ var TOCAT_TOOLS = (function() {
   }
 
   function postJSONRequest(url, obj) {
-    console.log('POST ', url);
     return new Promise(function(resolve, reject) {
       var xhr = new XMLHttpRequest(),
         requestUrl = url.indexOf('/') === 0 ? urlTocat + url : url;
@@ -115,7 +112,7 @@ var TOCAT_TOOLS = (function() {
    * @param url
    */
   function updateIcon(url) {
-    TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/tasks/?search=external_id=' + url).then(function(data) {
+    TOCAT_TOOLS.getJSON('/tasks/?search=external_id=' + url).then(function(data) {
       var orders = [];
       var totalBudget = null;
       if (data.length) {
