@@ -85,10 +85,12 @@ var TOCAT_TOOLS = (function() {
   function postJSONRequest(url, obj) {
     console.log('POST ', url);
     return new Promise(function(resolve, reject) {
-      var xhr = new XMLHttpRequest();
+      var xhr = new XMLHttpRequest(),
+        requestUrl = url.indexOf('/') === 0 ? urlTocat + url : url;
+
       counterRequest += 1;
       checkCounters();
-      xhr.open('post', encodeURI(url), true);
+      xhr.open('post', encodeURI(requestUrl), true);
       if (tocatToken) {
         xhr.setRequestHeader('Authorization', tocatToken);
       }

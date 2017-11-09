@@ -10,33 +10,33 @@
     apiUrl = 'https://private-anon-ad8ae34bbd-tocat.apiary-mock.com/timelog',
     approvalOptions = {
       w100: {
-        leave_type: 'working',
+        leave_type: 'Working',
         percentage: 1,
         title: '100%',
         description: '100% working day',
         checked: true
       },
       w50: {
-        leave_type: 'working',
+        leave_type: 'Working',
         percentage: 0.5,
         title: '50%',
         description: '50% working day'
       },
       w25: {
-        leave_type: 'working',
+        leave_type: 'Working',
         percentage: 0.25,
         title: '25%',
         description: '25% working day'
       },
       s100: {
-        leave_type: 'sick_paid',
-        percentage: null,
+        leave_type: 'Sick [Paid]',
+        percentage: 1,
         title: '<span class="fa fa-2x fa-stethoscope"></span>',
         description: '100% Sick/Paid'
       },
       u0: {
-        leave_type: 'unpaid',
-        percentage: null,
+        leave_type: 'Day off/Vacation',
+        percentage: 1,
         title: '<span class="fa fa-2x fa-plane"></span>',
         description: 'Unpaid leave'
       }
@@ -277,42 +277,14 @@
    */
 
   function approveDay(userId, date, leaveType, percentage) {
-    return new Promise(function(resolve, reject) {
-      var request = new XMLHttpRequest(),
-        dayLeaveType = leaveType || 'working',
-        dayPercentage = percentage || 1.0,
-        body;
+    var payload = {
+      user_id: userId,
+      date: date,
+      leave_type: leaveType || 'Working',
+      percentage: (percentage || 1.0).toString()
+    };
 
-      body = {
-        date: date,
-        percentage: dayLeaveType === 'working' ? dayPercentage : null,
-        leave_type: dayLeaveType
-      };
-
-      request.open('POST', apiUrl + '/?date_start=2016-05-05&date_end=2016-05-06&users=ansam,alsan,dekul');
-
-      request.setRequestHeader('Content-Type', 'application/json');
-
-      request.onreadystatechange = function () {
-        if (this.readyState === 4) {
-          console.log('Status:', this.status);
-          console.log('Headers:', this.getAllResponseHeaders());
-          console.log('Body:', this.responseText);
-        }
-      };
-
-      request.onload = function() {
-        var status = request.status;
-
-        if (status >= 200 && status < 400) {
-          resolve(request.response);
-        } else {
-          reject(request.response);
-        }
-      };
-
-      request.send(JSON.stringify(body));
-    });
+    return TOCAT_TOOLS.postJSON('/timelogs', payload);
   }
 
   /**
@@ -542,7 +514,11 @@
             var isApproved = cell.classList.contains('approved');
 
             if (isAuth) {
-              openApproveModal(userId, day, cell, isApproved);
+              if (isTocatConnected) {
+                openApproveModal(userId, day, cell, isApproved);
+              } else {
+                showNotification('Enable TOCAT connection, please', 'error');
+              }
             } else {
               showNotification('You are not authenticated in TOCAT plugin', 'error');
             }

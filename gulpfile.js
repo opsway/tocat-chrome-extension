@@ -21,9 +21,6 @@ gulp.task('move-content-scripts', function() {
 
 gulp.task('zoho-content-scripts-libs', function() {
   return gulp.src([
-    /*paths.node + '/jquery/dist/jquery.min.js',
-    paths.node + '/bootstrap/dist/js/bootstrap.min.js',
-    paths.node + '/bootbox/bootbox.min.js'*/
     paths.node + '/tingle.js/dist/tingle.min.js'
   ])
     .pipe(concat('people-zoho-libs.js'))

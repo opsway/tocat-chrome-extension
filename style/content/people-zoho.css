@@ -234,6 +234,7 @@
 .tingle-modal-box {
     -webkit-filter: drop-shadow(0 0 5px grey);
     filter: drop-shadow(0 0 5px grey);
+    max-width: 520px;
 }
 
 .tingle-modal-box__title {

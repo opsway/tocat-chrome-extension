@@ -156,7 +156,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   /**
-   * HtmlOptionObjest with selected resolver
+   * HtmlOptionObject with selected resolver
    * @returns {*}
    */
   function getSelectedResolverHtmlObject() {
