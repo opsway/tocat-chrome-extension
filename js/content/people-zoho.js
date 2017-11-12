@@ -40,52 +40,62 @@
         description: 'Unpaid leave'
       }
     },
-    filtersFirstDay, spinner, notification;
+    filtersFirstDay, spinner, notification, switcherContainer;
+
+  function syncData() {
+    return new Promise(function (resolve, reject) {
+      chrome.storage.sync.get(['isAuth', 'token'], function (storage) {
+        resolve(storage);
+      });
+    });
+  }
 
   /**
    * Process messages from the background script
    */
 
   chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-    chrome.storage.sync.get(['isAuth', 'token'], function (storage) {
+    syncData().then(function (storage) {
+      var switcherElement = document.getElementById('switcher-container');
+
       isAuth = storage.isAuth;
-      TOCAT_TOOLS.setTokenHeader(storage.token);
 
-      console.log('storage: ', storage);
-      if (isAuth && !isInitiated) {
-        isInitiated = true;
-        TOCAT_TOOLS.setTokenHeader(request.token);
-
+      if (isAuth && !switcherElement) {
+        TOCAT_TOOLS.setTokenHeader(storage.token);
         addAssets().then(function () {
           addSwitcher();
           filtersHook();
         });
       }
     });
-    console.log('request: ', request);
-    // isAuth = request.isAuth;
-
-
   });
 
   function addSwitcher() {
-    var switcherContainer = document.createElement('div'),
-        switcherHtml = '<input type="checkbox" name="tocat-connection" id="tocat-connection" class="checkbox-green ios-toggle"/>\n' +
+    var switcherHtml = '<input type="checkbox" name="tocat-connection" id="tocat-connection" class="checkbox-green ios-toggle"/>\n' +
       '<label for="tocat-connection" class="checkbox-label"></label><span class="switcher-label">JIRA sync</span>',
       filtersRow = document.getElementById('attendance-report-hoursreport'),
       switcher;
 
+    switcherContainer = document.createElement('div');
     switcherContainer.className = 'switcher-container';
+    switcherContainer.id = 'switcher-container';
     switcherContainer.innerHTML = switcherHtml;
     filtersRow.getElementsByClassName('col-md-4')[2].prepend(switcherContainer);
 
     switcher = document.getElementById('tocat-connection');
 
-    switcher.onclick = function () {
-      isTocatConnected = switcher.checked;
+    switcher.onclick = function (event) {
+      console.log('Switcher click: ', event, isAuth);
 
-      if (isTocatConnected) {
-        init();
+      if (isAuth) {
+        isTocatConnected = switcher.checked;
+
+        if (isTocatConnected) {
+          init();
+        }
+      } else {
+        event.preventDefault();
+        showNotification('You are not authenticated in TOCAT plugin', 'error');
       }
     };
   }
@@ -239,7 +249,7 @@
     }
 
     if (shortMonth) {
-      dateFormatted = date.getDate() + delimiter + date.toLocaleString('en-en', { month: 'short' }) + delimiter + date.getFullYear();
+      dateFormatted = ('0' + date.getDate()).slice(-2) + delimiter + date.toLocaleString('en-en', { month: 'short' }) + delimiter + date.getFullYear();
     }
 
     return dateFormatted;

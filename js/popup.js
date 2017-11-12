@@ -70,11 +70,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function hideContent() {
     content.classList.add('hidden');
-    loginButton.classList.remove('hidden');
+    showLoginButton();
   }
 
   function hideSpinner() {
     var spinner = document.getElementById('spinner');
+
     spinner.classList.add('hidden');
   }
 
@@ -1285,6 +1286,39 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  function initPopup(token) {
+    TOCAT_TOOLS.setTokenHeader(token);
+    // me.getOrdersOfMyTeam();
+    getACL().then(function () {
+      if (checkAccessControl(TASK_ACL.SHOW_AGGREGATED_INFO)) {
+        renderContent();
+        setAccessabilityOfOrders();
+        setAccessabilityOfExpenseCheckbox();
+        setAccessabilityOfSelectResolver();
+        setAccessabilityOfAcceptedCheckbox();
+        setAccessabilityOfRequestReviewCheckbox();
+        showContent();
+        setVersion();
+      } else {
+        document.body.style.height = '200px';
+        showErrors(["you don't have permission"]);
+      }
+    }, function() {
+      document.body.style.height = '200px';
+      showErrors(["you don't have permission"]);
+    });
+  }
+
+  function logout() {
+    hideContent();
+    chrome.browserAction.setBadgeText({text: ''});
+    me.logOut();
+    company.reset();
+    port.postMessage({
+      name: 'logout'
+    });
+  }
+
   port.postMessage({
     name: 'getToken'
   });
@@ -1294,27 +1328,9 @@ document.addEventListener('DOMContentLoaded', function() {
   port.onMessage.addListener(function(msg) {
     switch (msg.name) {
       case 'getToken':
-        if (msg.token && msg.token !== '') {
-          TOCAT_TOOLS.setTokenHeader(msg.token);
-          // me.getOrdersOfMyTeam();
-          getACL().then(function () {
-            if (checkAccessControl(TASK_ACL.SHOW_AGGREGATED_INFO)) {
-              renderContent();
-              setAccessabilityOfOrders();
-              setAccessabilityOfExpenseCheckbox();
-              setAccessabilityOfSelectResolver();
-              setAccessabilityOfAcceptedCheckbox();
-              setAccessabilityOfRequestReviewCheckbox();
-              showContent();
-              setVersion();
-            } else {
-              document.body.style.height = '200px';
-              showErrors(["you don't have permission"]);
-            }
-          }, function() {
-            document.body.style.height = '200px';
-            showErrors(["you don't have permission"]);
-          });
+        if (msg.isAuth && msg.token && msg.token !== '' && TOCAT_TOOLS.isTokenValid(msg.tokenUpdatedAt)) {
+          hideLoginButton();
+          initPopup(msg.token);
         } else {
           hideSpinner();
           showLoginButton();
@@ -1334,10 +1350,6 @@ document.addEventListener('DOMContentLoaded', function() {
         name: 'initAuth',
         url: data.url
       });
-
-      // port.postMessage({
-      //   name: 'getToken'
-      // });
     }, errorCather);
   });
 
@@ -1346,16 +1358,6 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   logoutButton.addEventListener('click', function() {
-    hideContent();
-    chrome.browserAction.setBadgeText({text: ''});
-    me.logOut();
-    company.reset();
-    port.postMessage({
-      name: 'logout'
-    });
-    /*port.postMessage({
-      name: 'getToken'
-    });*/
+    logout();
   });
-
 });

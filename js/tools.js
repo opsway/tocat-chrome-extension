@@ -181,16 +181,29 @@ var TOCAT_TOOLS = (function() {
     return url.split('://')[0];
   }
 
+  function isTokenValid(tokenUpdatedAt) {
+    var timeToLive = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+    if (tokenUpdatedAt && tokenUpdatedAt !== '') {
+      return Date.now() - parseInt(tokenUpdatedAt, 10) < timeToLive;
+    }
+
+    return false;
+  }
+
   /**
    * Save domain in localStorage
    * @param domain
    * @returns {boolean}
    */
   function saveDomain(domain) {
+    var storedDomain;
+
     if (domain) {
-      var storedDomain = JSON.parse(localStorage.storedDomains);
+      storedDomain = JSON.parse(localStorage.storedDomains);
       storedDomain[domain] = domain;
       localStorage.storedDomains = JSON.stringify(storedDomain);
+
       return true;
     }
     return false;
@@ -218,6 +231,7 @@ var TOCAT_TOOLS = (function() {
     setTokenHeader: setTokenHeader,
     getDomainFromUrl: getDomainFromUrl,
     saveDomain: saveDomain,
+    isTokenValid: isTokenValid,
     isDomainStored: isDomainStored,
     getProtocolFromUrl: getProtocolFromUrl
   }
