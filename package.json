@@ -1,6 +1,6 @@
 {
   "name": "tocat-chrome-extension",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "",
   "dependencies": {
     "bootbox": "4.4.0",
