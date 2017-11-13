@@ -25,7 +25,6 @@
   "content_scripts": [
     {
       "matches": ["https://people.zoho.com/hr*", "https://people.zoho.eu/hr*"],
-      "include_globs": ["*#attendance/report/hoursreport"],
       "css": ["build/css/assets.css", "build/css/content/people-zoho.css"],
       "js": ["build/js/content/people-zoho-libs.js", "build/js/tools.js", "build/js/content/people-zoho.js"],
       "run_at": "document_end"

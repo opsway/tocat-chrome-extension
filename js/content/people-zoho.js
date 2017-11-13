@@ -4,6 +4,7 @@
   var timelog = [],
     usersParsed = {},
     isAuth = false,
+    isInitiating = false,
     isInitiated = false,
     isContentLoaded = false,
     isTocatConnected = false,
@@ -42,6 +43,10 @@
     },
     filtersFirstDay, spinner, notification, switcherContainer;
 
+  /**
+   * Get data from Google Sync storage
+   */
+
   function syncData() {
     return new Promise(function (resolve, reject) {
       chrome.storage.sync.get(['isAuth', 'token'], function (storage) {
@@ -51,24 +56,70 @@
   }
 
   /**
+   * Wait for element to be loaded
+   *
+   * @param {String} elementId
+   * @param {Function} callback
+   */
+
+  function waitForElement(elementId, callback) {
+    var timeout, wait;
+
+    wait = function () {
+      var element = document.getElementById(elementId);
+
+      if (document.body.contains(element)) {
+        clearTimeout(timeout);
+        callback();
+      }
+      else {
+        timeout = setTimeout(_wait, 10);
+      }
+    };
+
+    wait();
+  }
+
+  function hashInit(localAuth) {
+    var tableBodyId = 'ZPAtt_attmonthlyReportTableBody';
+
+    if (location.hash === '#attendance/report/hoursreport') {
+      syncData().then(function (storage) {
+        isAuth = storage.isAuth;
+
+        if (!isInitiating && localAuth && isAuth) {
+          isInitiating = true;
+
+          waitForElement(tableBodyId, function () {
+            var switcherElement = document.getElementById('switcher-container');
+
+            if (!document.body.contains(switcherElement)) {
+              TOCAT_TOOLS.setTokenHeader(storage.token);
+              addAssets().then(function () {
+                setTimeout(function () {
+                  isInitiating = false;
+                  addSwitcher();
+                  filtersHook();
+                });
+              });
+            }
+          });
+        }
+      });
+    }
+  }
+
+  /**
    * Process messages from the background script
    */
 
   chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-    syncData().then(function (storage) {
-      var switcherElement = document.getElementById('switcher-container');
-
-      isAuth = storage.isAuth;
-
-      if (request.isAuth && isAuth && !switcherElement) {
-        TOCAT_TOOLS.setTokenHeader(storage.token);
-        addAssets().then(function () {
-          addSwitcher();
-          filtersHook();
-        });
-      }
-    });
+    hashInit(request.isAuth);
   });
+
+  /**
+   * Add JIRA sync switcher element
+   */
 
   function addSwitcher() {
     var switcherHtml = '<input type="checkbox" name="tocat-connection" id="tocat-connection" class="checkbox-green ios-toggle"/>\n' +
