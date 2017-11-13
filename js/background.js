@@ -55,19 +55,24 @@ function initAuth(url) {
   });
 }
 
-function logout() {
-  isAuth = false;
-
-  chrome.storage.sync.set({token: localStorage.tocatToken, tokenUpdatedAt: localStorage.tokenUpdatedAt, isAuth: isAuth}, function() {
-    sendDataToContent();
-  });
-}
-
 /**
  * Long term connection port
  */
 
 chrome.extension.onConnect.addListener(function(port) {
+  var syncData = function () {
+    port.postMessage({
+      name: 'getToken',
+      token: localStorage.tocatToken,
+      tokenUpdatedAt: localStorage.tokenUpdatedAt,
+      isAuth: isAuth
+    });
+
+    chrome.storage.sync.set({token: localStorage.tocatToken, tokenUpdatedAt: localStorage.tokenUpdatedAt, isAuth: isAuth}, function() {
+      sendDataToContent();
+    });
+  };
+
   port.onMessage.addListener(function(msg) {
     switch (msg.name) {
       case 'setToken':
@@ -80,30 +85,18 @@ chrome.extension.onConnect.addListener(function(port) {
         initAuth(msg.url);
         break;
       case 'logout':
-        logout();
+        isAuth = false;
 
+        syncData();
         break;
       case 'getToken':
-
-        bkg.console.log('getToken(): ', localStorage, isAuth);
-
         if (!TOCAT_TOOLS.isTokenValid(localStorage.tokenUpdatedAt)) {
           isAuth = false;
           localStorage.tokenUpdatedAt = '';
           localStorage.tocatToken = '';
         }
 
-        port.postMessage({
-          name: 'getToken',
-          token: localStorage.tocatToken,
-          tokenUpdatedAt: localStorage.tokenUpdatedAt,
-          isAuth: isAuth
-        });
-
-        chrome.storage.sync.set({token: localStorage.tocatToken, tokenUpdatedAt: localStorage.tokenUpdatedAt, isAuth: isAuth}, function () {
-          sendDataToContent();
-        });
-
+        syncData();
         break;
       default:
         break;

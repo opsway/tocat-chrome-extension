@@ -60,7 +60,7 @@
 
       isAuth = storage.isAuth;
 
-      if (isAuth && !switcherElement) {
+      if (request.isAuth && isAuth && !switcherElement) {
         TOCAT_TOOLS.setTokenHeader(storage.token);
         addAssets().then(function () {
           addSwitcher();
