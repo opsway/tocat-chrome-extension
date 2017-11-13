@@ -136,13 +136,12 @@
     switcher = document.getElementById('tocat-connection');
 
     switcher.onclick = function (event) {
-      console.log('Switcher click: ', event, isAuth);
-
       if (isAuth) {
-        isTocatConnected = switcher.checked;
-
-        if (isTocatConnected) {
+        if (switcher.checked) {
+          isTocatConnected = switcher.checked;
           init();
+        } else {
+          event.preventDefault();
         }
       } else {
         event.preventDefault();
