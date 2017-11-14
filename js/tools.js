@@ -1,4 +1,4 @@
-if (!chrome.runtime) {
+/*if (!chrome.runtime) {
   // Chrome 20-21
   chrome.runtime = chrome.extension;
 } else if(!chrome.runtime.onMessage) {
@@ -7,13 +7,12 @@ if (!chrome.runtime) {
   chrome.runtime.sendMessage = chrome.extension.sendMessage;
   chrome.runtime.onConnect = chrome.extension.onConnect;
   chrome.runtime.connect = chrome.extension.connect;
-}
+}*/
 
 var TOCAT_TOOLS = (function() {
   var counterRequest = 0,
     counterResponse = 0,
     tocatToken = '',
-    port = chrome.extension.connect({name: "connection with background"}),
     urlTocat = 'https://tocat.opsway.com';
 
   // show and hide spinner
@@ -21,25 +20,26 @@ var TOCAT_TOOLS = (function() {
     setTimeout(function() {
       var spinner = document.getElementById('spinner');
 
-      if ((counterRequest == counterResponse) && spinner) {
-        spinner.classList.add('hide');
+      if ((counterRequest === counterResponse) && spinner) {
+        spinner.classList.add('hidden');
       }
 
-      if ((counterRequest != counterResponse) && spinner) {
-        spinner.classList.remove('hide');
+      if ((counterRequest !== counterResponse) && spinner) {
+        spinner.classList.remove('hidden');
       }
     }, 50);
   }
 
   function getJSONRequest(url) {
-    console.log('GET ', url);
     return new Promise(function(resolve, reject) {
-      var xhr = new XMLHttpRequest();
+      var xhr = new XMLHttpRequest(),
+        requestUrl = url.indexOf('/') === 0 ? urlTocat + url : url;
+
       counterRequest += 1;
       checkCounters();
-      xhr.open('get', encodeURI(url), true);
-      if (localStorage.tocatToken) {
-        xhr.setRequestHeader('Authorization', localStorage.tocatToken);
+      xhr.open('get', encodeURI(requestUrl), true);
+      if (tocatToken) {
+        xhr.setRequestHeader('Authorization', tocatToken);
       }
       xhr.responseType = 'json';
       xhr.onload = function() {
@@ -57,19 +57,20 @@ var TOCAT_TOOLS = (function() {
   }
 
   function deleteJSONRequest(url) {
-    console.log('DELETE ', url);
     return new Promise(function(resolve, reject) {
-      var xhr = new XMLHttpRequest();
+      var xhr = new XMLHttpRequest(),
+        requestUrl = url.indexOf('/') === 0 ? urlTocat + url : url;
+
       counterRequest += 1;
       checkCounters();
-      xhr.open('delete', encodeURI(url), true);
+      xhr.open('delete', encodeURI(requestUrl), true);
       if (tocatToken) {
         xhr.setRequestHeader('Authorization', tocatToken);
       }
       xhr.responseType = 'json';
       xhr.onload = function() {
         var status = xhr.status;
-        if (status == 200) {
+        if (status === 200) {
           resolve(xhr.response);
         } else {
           reject(xhr.response);
@@ -82,12 +83,14 @@ var TOCAT_TOOLS = (function() {
   }
 
   function postJSONRequest(url, obj) {
-    console.log('POST ', url);
     return new Promise(function(resolve, reject) {
-      var xhr = new XMLHttpRequest();
+      var xhr = new XMLHttpRequest(),
+        requestUrl = url.indexOf('/') === 0 ? urlTocat + url : url;
+
+      console.log('POST %s, token: %s', requestUrl, tocatToken);
       counterRequest += 1;
       checkCounters();
-      xhr.open('post', encodeURI(url), true);
+      xhr.open('post', encodeURI(requestUrl), true);
       if (tocatToken) {
         xhr.setRequestHeader('Authorization', tocatToken);
       }
@@ -112,11 +115,11 @@ var TOCAT_TOOLS = (function() {
    * @param url
    */
   function updateIcon(url) {
-    TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/tasks/?search=external_id=' + url).then(function(data) {
+    TOCAT_TOOLS.getJSON('/tasks/?search=external_id=' + url).then(function(data) {
       var orders = [];
       var totalBudget = null;
       if (data.length) {
-        orders = data[0].orders
+        orders = data[0].orders;
         totalBudget = 0;
         for (var i = 0 ; i < orders.length ; i++) {
           totalBudget += parseInt(orders[i].budget, 10);
@@ -150,7 +153,7 @@ var TOCAT_TOOLS = (function() {
     var S4 = function() {
       return (((1+Math.random())*0x10000)|0).toString(16).substring(1);
     };
-    return (S4()+S4()+"-"+S4()+"-"+S4()+"-"+S4()+"-"+S4()+S4()+S4());
+    return (S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4());
   }
 
   function setTokenHeader(token) {
@@ -178,16 +181,29 @@ var TOCAT_TOOLS = (function() {
     return url.split('://')[0];
   }
 
+  function isTokenValid(tokenUpdatedAt) {
+    var timeToLive = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+    if (tokenUpdatedAt && tokenUpdatedAt !== '') {
+      return Date.now() - parseInt(tokenUpdatedAt, 10) < timeToLive;
+    }
+
+    return false;
+  }
+
   /**
    * Save domain in localStorage
    * @param domain
    * @returns {boolean}
    */
   function saveDomain(domain) {
+    var storedDomain;
+
     if (domain) {
-      var storedDomain = JSON.parse(localStorage.storedDomains);
+      storedDomain = JSON.parse(localStorage.storedDomains);
       storedDomain[domain] = domain;
       localStorage.storedDomains = JSON.stringify(storedDomain);
+
       return true;
     }
     return false;
@@ -201,7 +217,8 @@ var TOCAT_TOOLS = (function() {
   function isDomainStored(domain) {
     var storedDomain = JSON.parse(localStorage.storedDomains);
     bkg.console.log('storedDomain ', storedDomain);
-    return storedDomain[domain] ? true : false;
+
+    return !!storedDomain[domain];
   }
 
   return {
@@ -214,6 +231,7 @@ var TOCAT_TOOLS = (function() {
     setTokenHeader: setTokenHeader,
     getDomainFromUrl: getDomainFromUrl,
     saveDomain: saveDomain,
+    isTokenValid: isTokenValid,
     isDomainStored: isDomainStored,
     getProtocolFromUrl: getProtocolFromUrl
   }

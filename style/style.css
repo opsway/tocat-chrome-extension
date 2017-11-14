@@ -29,7 +29,6 @@ table.ordersGrid td, table.ordersGrid th {
 
 table.testgrid th {
     background: #E5E5E5;
-    text-align: left;
     text-align: center;
 }
 
@@ -69,8 +68,8 @@ input.invalid {
 }
 
 .big-letter {
-    margin-bottom: 0px;
-    margin-top: 0px;
+    margin-bottom: 0;
+    margin-top: 0;
 }
 
 .mtb-10 {
@@ -79,8 +78,8 @@ input.invalid {
 }
 
 .mtb-0 {
-    margin-bottom: 0px;
-    margin-top: 0px;
+    margin-bottom: 0;
+    margin-top: 0;
 }
 
 .m-0 {
@@ -96,7 +95,7 @@ input.invalid {
 }
 
 .mb-0 {
-    margin-bottom: 0px;
+    margin-bottom: 0;
 }
 
 .w-200 {
@@ -107,6 +106,10 @@ input.invalid {
     margin-right: 5px;
 }
 
+.pt-10 {
+    padding-top: 10px;
+}
+
 select {
     display: block;
     width: 100%;
@@ -115,7 +118,7 @@ select {
     font-size: 14px;
     line-height: 1.52857143;
     color: #3a3f51;
-    background-color: #ffffff;
+    background-color: #fff;
     background-image: none;
     border: 1px solid #dde6e9;
     border-radius: 4px;
@@ -127,7 +130,9 @@ select {
 }
 
 html {
-    height: 0px;
+    top: 0;
+    height: 0;
+    padding-top: 0;
 }
 
 .icon-pencil-format {
@@ -144,4 +149,25 @@ html {
 .save-message {
     position: absolute;
     right: 0;
+}
+
+.cursor-p {
+    cursor: pointer;
+}
+
+.fx {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: -webkit-flex;
+    display: flex;
+}
+
+.fx-x-center {
+    -webkit-justify-content: center;
+    justify-content: center;
+}
+
+.fx-y-center {
+    -webkit-align-items: center;
+    align-items: center;
 }

@@ -2,12 +2,12 @@
   "manifest_version": 2,
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1OknxFhZFwis5I/sLNcl+ab+lnvHjLuFJcFnXJx7tZXrYQZHO7+DPa3sCeTmasOQYkFW0ksnq+unvxaGDr6rzUhT1ZrpN2JGhRRB2+B269bnoc17rZJg5UPMz6lviIV/7KVQyAuYYXLacZb5xsJ+Tj/DEk/r04GDI0OedXLFlaMIpXADFwb8HWxWP/aQUq8+EzBWtaJjP3UgVCXTXsEPfWYxk/2Tmd8eX0tkWtCaKnqbBlEV1qHrSnEH+QxpWdxtj4OdcQ9rcKMsOd7g39OqMHjzBo5tHk0xC1yl8wvmkvqEICs8WbmIEU1Vz5dWSZ/KA1bvHRcPs7PmCN/PGBXmOQIDAQAB",
   "name":"TOCAT",
-  "version":"1.0.7",
+  "version":"1.0.3",
   "description":"TOCAT plugin",
   "browser_action": {
-    "default_icon": "img/icon.png",
+    "default_icon": "icon.png",
     "default_title": "TOCAT",
-    "default_popup": "popup.html"
+    "default_popup": "index.html"
   },
   "permissions": [
     "storage",
@@ -15,34 +15,30 @@
     "https://accounts.google.com/*",
     "https://*.googleusercontent.com/*",
     "*://*.googleapis.com/*",
+    "https://people.zoho.com/*",
     "tabs",
     "identity"
   ],
   "background": {
-    "scripts": ["build/js/background.js"],
+    "scripts": ["./build/js/background-assets.js"],
     "persistent": false
   },
   "content_scripts": [
     {
-      "matches": ["https://people.zoho.com/hr*", "https://people.zoho.eu/hr*"],
-      "css": ["build/css/assets.css", "build/css/content/people-zoho.css"],
-      "js": ["build/js/content/people-zoho-libs.js", "build/js/tools.js", "build/js/content/people-zoho.js"],
-      "run_at": "document_end"
+      "matches": ["https://people.zoho.com/*"],
+      "css": ["./build/css/content/people-zoho-com.css"],
+//      "matches": ["https://people.zoho.com/hr#attendance/report/hoursreport"],
+      "js": ["./build/js/content/people-zoho-com.js"]
     }
   ],
-  "web_accessible_resources": [
-    "build/css/assets.css",
-    "build/js/tools.js",
-    "build/js/content/people-zoho-libs.js",
-    "fonts/*.*"
-  ],
   "icons": {
-    "16": "img/16.png",
-    "48": "img/48.png",
-    "128": "img/128.png"
+    "16": "16.png",
+    "48": "48.png",
+    "128": "128.png"
   },
   "offline_enabled": false,
   "oauth2": {
+//    "client_id": "158247504949-3grgaccf3iflq6l0dophe4a7kcapnqd7.apps.googleusercontent.com",
     "client_id": "641843524050-oic7glk3tu44o8nvlngulfmtrtv62rqu.apps.googleusercontent.com",
     "scopes": [
       "https://www.googleapis.com/auth/userinfo.email"

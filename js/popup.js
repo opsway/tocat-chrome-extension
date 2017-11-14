@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     selectResolver = document.getElementById('selectResolver'),
     checkboxAccepted = document.getElementById('checkbox-accepted'),
     checkboxExpense = document.getElementById('checkbox-expense'),
+    checkboxRequestReview = document.getElementById('checkbox-request-review'),
     me = new I(),
     company = new Company(),
     users = [],
@@ -56,25 +57,26 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function showLoginButton() {
-    loginButton.classList.remove('hide');
+    loginButton.classList.remove('hidden');
   }
 
   function hideLoginButton() {
-    loginButton.classList.add('hide');
+    loginButton.classList.add('hidden');
   }
 
   function showContent() {
-    content.classList.remove('hide');
+    content.classList.remove('hidden');
   }
 
   function hideContent() {
-    content.classList.add('hide');
-    loginButton.classList.remove('hide');
+    content.classList.add('hidden');
+    showLoginButton();
   }
 
   function hideSpinner() {
     var spinner = document.getElementById('spinner');
-    spinner.classList.add('hide');
+
+    spinner.classList.add('hidden');
   }
 
   function updateAllOrders() {
@@ -155,7 +157,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   /**
-   * HtmlOptionObjest with selected resolver
+   * HtmlOptionObject with selected resolver
    * @returns {*}
    */
   function getSelectedResolverHtmlObject() {
@@ -180,8 +182,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     return new Promise(function(resolve, reject) {
-      TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/user/' + userId).then(function(data) {
-        TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/orders?limit=9999999&search=team==' + data.tocat_team.name + ' completed = 0&sorted_by=name')
+      TOCAT_TOOLS.getJSON('/user/' + userId).then(function(data) {
+        TOCAT_TOOLS.getJSON('/orders?limit=9999999&search=team==' + data.tocat_team.name + ' completed = 0&sorted_by=name')
           .then(function (data){
             resolve(data);
           }, errorCather);
@@ -196,7 +198,7 @@ document.addEventListener('DOMContentLoaded', function() {
    * @returns {*}
    */
   function getACL(){
-    return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/acl').then(function(AClList) {
+    return TOCAT_TOOLS.getJSON('/acl').then(function(AClList) {
       globalReceivedACL = AClList;
       console.log('AClList ', AClList);
       // globalReceivedACL = ['modify_accepted','modify_resolver','modify_budgets','show_budgets','show_issues','show_aggregated_info','can_request_review','can_review_task','set_expenses','remove_expenses'];
@@ -236,7 +238,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function createNewTask() {
     return new Promise(function(resolve, reject) {
       getCurrentUrl().then(function(data) {
-        TOCAT_TOOLS.postJSON(TOCAT_TOOLS.urlTocat + '/tasks', {
+        TOCAT_TOOLS.postJSON('/tasks', {
           external_id: data
         }).then(function(data) {
           resolve(data);
@@ -252,7 +254,7 @@ document.addEventListener('DOMContentLoaded', function() {
    * @returns {*}
    */
   function getAuthUrl() {
-    return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/authenticate')
+    return TOCAT_TOOLS.getJSON('/authenticate')
   }
 
   /**
@@ -261,7 +263,7 @@ document.addEventListener('DOMContentLoaded', function() {
    * @returns {*}
    */
   function setAcceptStatus(task) {
-    return TOCAT_TOOLS.postJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/accept');
+    return TOCAT_TOOLS.postJSON('/task/' + task.id + '/accept');
   }
 
   /**
@@ -270,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
    * @returns {*}
    */
   function rmAcceptStatus(task) {
-    return TOCAT_TOOLS.deleteJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/accept');
+    return TOCAT_TOOLS.deleteJSON('/task/' + task.id + '/accept');
   }
 
   /**
@@ -372,17 +374,17 @@ document.addEventListener('DOMContentLoaded', function() {
    * @returns {*}
    */
   function addResolver(resolverId) {
-    return TOCAT_TOOLS.postJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/resolver', {
+    return TOCAT_TOOLS.postJSON('/task/' + task.id + '/resolver', {
       "user_id": resolverId
     });
   }
 
   function rmResolver() {
-    return TOCAT_TOOLS.deleteJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/resolver');
+    return TOCAT_TOOLS.deleteJSON('/task/' + task.id + '/resolver');
   }
 
   function setExpensesStatus(task) {
-    return TOCAT_TOOLS.postJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/expenses').then(function () {
+    return TOCAT_TOOLS.postJSON('/task/' + task.id + '/expenses').then(function () {
       task.expenses = true;
     }, function (err) {
       checkboxExpense.checked = false;
@@ -391,7 +393,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function rmExpensesStatus(task) {
-    return TOCAT_TOOLS.deleteJSON(TOCAT_TOOLS.urlTocat + '/task/' + task.id + '/expenses').then(function () {
+    return TOCAT_TOOLS.deleteJSON('/task/' + task.id + '/expenses').then(function () {
       task.expenses = false;
     });
   }
@@ -404,7 +406,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var storedOrders = [];
     return function() {
       if (!storedOrders.length) {
-        return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/orders?limit=9999999&search=completed = 0 free_budget>0&sort=name').then(function(data){
+        return TOCAT_TOOLS.getJSON('/orders?limit=9999999&search=completed = 0 free_budget>0&sort=name').then(function(data){
           storedOrders = data;
           return data;
         });
@@ -423,7 +425,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof(orderId) === 'string') {
       orderId = orderId.split("'")[1];
     }
-    return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/order/' + orderId);
+    return TOCAT_TOOLS.getJSON('/order/' + orderId);
   }
 
   /**
@@ -504,7 +506,7 @@ document.addEventListener('DOMContentLoaded', function() {
    * @returns {*}
    */
   function setBudget(orders, taskId) {
-    return TOCAT_TOOLS.postJSON(TOCAT_TOOLS.urlTocat + '/task/' + taskId + '/budget', {
+    return TOCAT_TOOLS.postJSON('/task/' + taskId + '/budget', {
       budget: orders
     });
   }
@@ -515,7 +517,7 @@ document.addEventListener('DOMContentLoaded', function() {
    * @returns {Promise}
    */
   function getBudget(taskId) {
-    return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/task/' + taskId + '/budget');
+    return TOCAT_TOOLS.getJSON('/task/' + taskId + '/budget');
   }
 
   /**
@@ -1009,12 +1011,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  function setAccessabilityOfRequestReviewCheckbox() {
+    var checkboxRequestReview = document.getElementById('checkbox-request-review');
+
+    checkboxRequestReview.checked = checkAccessControl(TASK_ACL.CAN_REQUEST_REVIEW);
+    checkboxRequestReview.disabled = !checkAccessControl(TASK_ACL.CAN_REVIEW_TASK);
+  }
+
   function setAccessabilityOfSelectResolver() {
-    if (checkAccessControl(TASK_ACL.MODIFY_RESOLVER)) {
-      selectResolver.disabled = false;
-    } else {
-      selectResolver.disabled = true;
-    }
+    selectResolver.disabled = !checkAccessControl(TASK_ACL.MODIFY_RESOLVER);
   }
 
   function setAccessabilityOfChangeOrders() {
@@ -1041,11 +1046,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function setAccessabilityOfAcceptedCheckbox() {
-    if (checkAccessControl(TASK_ACL.MODIFY_ACCEPTED)) {
-      checkboxAccepted.disabled = false;
-    } else {
-      checkboxAccepted.disabled = true;
-    }
+    checkboxAccepted.disabled = !checkAccessControl(TASK_ACL.MODIFY_ACCEPTED);
   }
 
   function setAccessabilityOfExpenseCheckbox() {
@@ -1123,7 +1124,7 @@ document.addEventListener('DOMContentLoaded', function() {
    */
   function getCurrentUrl() {
     return new Promise(function(resolve, reject) {
-      chrome.tabs.query({'active': true, 'lastFocusedWindow': true}, function (tabs) {
+      chrome.tabs.query({'active': true, 'currentWindow': true}, function (tabs) {
         resolve(tabs[0].url);
       });
     });
@@ -1135,10 +1136,10 @@ document.addEventListener('DOMContentLoaded', function() {
    */
   function getCurrentTask() {
     return getCurrentUrl().then(function(data) {
-      return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/tasks/?search=external_id=' + data).then(function(data) {
+      return TOCAT_TOOLS.getJSON('/tasks/?search=external_id=' + data).then(function(data) {
         if (data.length) {
           rebuildSelect(data[0].potential_resolvers, true, data[0].resolver.id);
-          return TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/task/' + data[0].id).then(function(receivedTask) {
+          return TOCAT_TOOLS.getJSON('/task/' + data[0].id).then(function(receivedTask) {
             return receivedTask;
           });
         } else {
@@ -1154,6 +1155,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function renderContent() {
     init();
+
     if (checkAccessControl(TASK_ACL.MODIFY_BUDGETS)) {
       updateAllOrders();
     }
@@ -1169,7 +1171,7 @@ document.addEventListener('DOMContentLoaded', function() {
           for (var i = 0 ; i < numberRows ; i++) {
             if (editableGrid.getValueAt(i, 0) !== 'Select') {
               getOrder(editableGrid.getValueAt(i, 0)).then(function(order) {
-                TOCAT_TOOLS.getJSON(TOCAT_TOOLS.urlTocat + '/orders?search=team==' + order.team.name + ' completed != 1')
+                TOCAT_TOOLS.getJSON('/orders?search=team==' + order.team.name + ' completed != 1')
                   .then(function (data){
                     globalPotentialOrders = adjustArrayOfObject(data, 'id');
                   }, errorCather);
@@ -1284,38 +1286,57 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  function initPopup(token) {
+    TOCAT_TOOLS.setTokenHeader(token);
+    // me.getOrdersOfMyTeam();
+    getACL().then(function () {
+      if (checkAccessControl(TASK_ACL.SHOW_AGGREGATED_INFO)) {
+        renderContent();
+        setAccessabilityOfOrders();
+        setAccessabilityOfExpenseCheckbox();
+        setAccessabilityOfSelectResolver();
+        setAccessabilityOfAcceptedCheckbox();
+        setAccessabilityOfRequestReviewCheckbox();
+        showContent();
+        setVersion();
+      } else {
+        document.body.style.height = '200px';
+        showErrors(["you don't have permission"]);
+      }
+    }, function() {
+      document.body.style.height = '200px';
+      showErrors(["you don't have permission"]);
+    });
+  }
+
+  function logout() {
+    hideContent();
+    chrome.browserAction.setBadgeText({text: ''});
+    me.logOut();
+    company.reset();
+    port.postMessage({
+      name: 'logout'
+    });
+  }
+
   port.postMessage({
     name: 'getToken'
   });
+
   saveDomain();
 
   port.onMessage.addListener(function(msg) {
     switch (msg.name) {
       case 'getToken':
-        if (msg.token) {
-          TOCAT_TOOLS.setTokenHeader(msg.token);
-          // me.getOrdersOfMyTeam();
-          getACL().then(function () {
-            if (checkAccessControl(TASK_ACL.SHOW_AGGREGATED_INFO)) {
-              renderContent();
-              setAccessabilityOfOrders();
-              setAccessabilityOfExpenseCheckbox();
-              setAccessabilityOfSelectResolver();
-              setAccessabilityOfAcceptedCheckbox();
-              showContent();
-              setVersion();
-            } else {
-              document.body.style.height = '200px';
-              showErrors(["you don't have permission"]);
-            }
-          }, function() {
-            document.body.style.height = '200px';
-            showErrors(["you don't have permission"]);
-          });
+        if (msg.isAuth && msg.token && msg.token !== '' && TOCAT_TOOLS.isTokenValid(msg.tokenUpdatedAt)) {
+          hideLoginButton();
+          initPopup(msg.token);
         } else {
           hideSpinner();
           showLoginButton();
         }
+
+        break;
       default:
         break;
     }
@@ -1325,39 +1346,10 @@ document.addEventListener('DOMContentLoaded', function() {
     getAuthUrl().then(function(data) {
       hideLoginButton();
 
-      chrome.identity.launchWebAuthFlow(
-        {'url': data.url, 'interactive': true},
-        function(redirect_url) {
-          if (!chrome.runtime.lastError) {
-            if (redirect_url) {
-              var message = redirect_url.split('#')[1];
-              var authToken = message.split('=')[1];
-
-              port.postMessage({
-                name: 'setToken',
-                token: authToken
-              });
-
-              port.postMessage({
-                name: 'getToken'
-              });
-
-            } else {
-              addAuthError('Authorization failed');
-              chrome.identity.launchWebAuthFlow(
-                { 'url': 'https://accounts.google.com/logout' },
-                function() {}
-              );
-            }
-          } else {
-            addAuthError('Authorization failed');
-            chrome.identity.launchWebAuthFlow(
-              { 'url': 'https://accounts.google.com/logout' },
-              function() {}
-            );
-          }
+      port.postMessage({
+        name: 'initAuth',
+        url: data.url
       });
-
     }, errorCather);
   });
 
@@ -1366,14 +1358,6 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   logoutButton.addEventListener('click', function() {
-    localStorage.tocatToken = '';
-    hideContent();
-    chrome.browserAction.setBadgeText({text: ''});
-    me.logOut();
-    company.logOut();
-    port.postMessage({
-      name: 'getToken'
-    });
+    logout();
   });
-
 });
