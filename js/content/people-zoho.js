@@ -73,7 +73,7 @@
         callback();
       }
       else {
-        timeout = setTimeout(_wait, 10);
+        timeout = setTimeout(wait, 10);
       }
     };
 
@@ -363,16 +363,18 @@
 
   function renderIssues(userId, date) {
     var workday = getTimelogItem(userId, date),
-      content;
+      content, issuesTitile;
 
     if (workday && workday.issues.length > 0) {
-      content = '<table class="tocat-table"><tr><th>ISSUES</th><th>Time</th></tr>';
+      issuesTitile = workday.issues.length > 1 ? 'issues' : 'issue';
+
+      content = '<table class="tocat-table table-fixed"><thead><tr><th>ISSUES</th><th>Time</th></tr></thead>';
 
       workday.issues.map(function (issue) {
         content += '<tr class="tocat-issues-content"><td><a href="https://opsway.atlassian.net/browse/' + issue.issue_key + '" target="_blank">' + issue.issue_key + '</a></td><td>' + issue.hours + 'h</td></tr>';
       });
 
-      content += '<tr><td>TOTAL</td><td>' + workday.hours + 'h</td></tr></table>';
+      content += '<tfoot><tr><td>TOTAL (' + workday.issues.length + ' ' + issuesTitile + ')</td><td>' + workday.hours + 'h</td></tr></tfoot></table>';
     } else {
       content = '<div class="no-result">No logged time in issues</div>';
     }
