@@ -524,7 +524,7 @@
       if (data.approval_status) {
         cell.className = data.approval_status ? data.approval_status.toLowerCase() : '';
 
-        if (data.leave_type) {
+        if (data.leave_type && data.leave_type !== '') {
           Object.keys(leaveTypes).forEach(function (key) {
             if (leaveTypes[key] === data.leave_type) {
               leaveKey = key;
