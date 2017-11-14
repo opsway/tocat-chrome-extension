@@ -1,28 +1,62 @@
 var isAuth = false,
-  authUrl = '';
+  isExecutingScripts = false,
+  contentUrl = 'https://people.zoho.com/hr#attendance/report/hoursreport';
 
 bkg = chrome.extension.getBackgroundPage();
 localStorage.tocatToken = '';
 localStorage.tokenUpdatedAt = '';
 localStorage.storedDomains = '{}';
 
-function sendDataToContent(tabId) {
+function injectResources(files) {
+  var getFileExtension = /(?:\.([^.]+))?$/, loadFunctionForExtension;
+
+  loadFunctionForExtension = function(ext) {
+    switch(ext) {
+      case 'js' : return chrome.tabs.executeScript;
+      case 'css' : return chrome.tabs.insertCSS;
+      default: throw new Error('Unsupported resource type')
+    }
+  };
+
+  return Promise.all(files.map(function (resource) {
+    return new Promise(function(resolve, reject) {
+      var ext = getFileExtension.exec(resource)[1],
+        loadFunction = loadFunctionForExtension(ext);
+
+      loadFunction(null, {file: resource}, function() {
+        if (chrome.runtime.lastError) {
+          reject(chrome.runtime.lastError);
+        } else {
+          resolve();
+        }
+      });
+    });
+  }));
+}
+
+function sendDataToContent(tabUpdated) {
   var data = {
     isAuth: isAuth,
     token: localStorage.tocatToken,
     tokenUpdatedAt: localStorage.tokenUpdatedAt
   };
 
-  if (tabId) {
-    chrome.tabs.sendMessage(tabId, data);
-  } else {
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-      chrome.tabs.sendMessage(tabs[0].id, data);
+  chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
+    chrome.tabs.sendMessage(tabs[0].id, data, function (response) {
+      if (tabs[0].url === contentUrl && tabUpdated && response !== 'ok' && !isExecutingScripts) {
+        isExecutingScripts = true;
+        injectResources(['build/css/assets.css', 'build/css/content/people-zoho.css', 'build/js/content/people-zoho-libs.js', 'build/js/tools.js', 'build/js/content/people-zoho.js']).then(function () {
+          sendDataToContent();
+        });
+      }
     });
-  }
+  });
 }
 
-// Get auth token using chrome.tabs
+/**
+ * Get server token
+ * @param {String} url
+ */
 
 function initAuth(url) {
   chrome.tabs.query({active: true, lastFocusedWindow: true}, function (tabs) {
@@ -41,12 +75,10 @@ function initAuth(url) {
             localStorage.tokenUpdatedAt = Date.now();
             isAuth = true;
 
-            chrome.tabs.update(initialTab.id, {active: true}, function () {
-              chrome.storage.sync.set({token: localStorage.tocatToken, tokenUpdatedAt: localStorage.tokenUpdatedAt, isAuth: isAuth}, function() {
-                sendDataToContent(initialTab.id);
+            chrome.storage.sync.set({token: localStorage.tocatToken, tokenUpdatedAt: localStorage.tokenUpdatedAt, isAuth: isAuth}, function () {
+              chrome.tabs.update(initialTab.id, {active: true}, function () {
+                chrome.tabs.remove(tabId);
               });
-
-              chrome.tabs.remove(tabId);
             });
           }
         }
@@ -80,8 +112,6 @@ chrome.extension.onConnect.addListener(function(port) {
         localStorage.tokenUpdatedAt = Date.now();
         break;
       case 'initAuth':
-        authUrl = msg.url;
-
         initAuth(msg.url);
         break;
       case 'logout':
@@ -131,7 +161,9 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
     localStorage.tokenUpdatedAt = storage.tokenUpdatedAt;
     isAuth = storage.isAuth;
 
-    sendDataToContent(tabId);
+    if (url === contentUrl) {
+      sendDataToContent(true);
+    }
   });
 });
 
@@ -150,18 +182,20 @@ chrome.tabs.onActivated.addListener(function() {
     protocol = TOCAT_TOOLS.getProtocolFromUrl(url);
     full = protocol + '://' + domain;
 
-    chrome.storage.sync.get(['isAuth', 'token', 'tokenUpdatedAt'], function(storage) {
-      localStorage.tocatToken = storage.token;
-      localStorage.tokenUpdatedAt = storage.tokenUpdatedAt;
-      isAuth = storage.isAuth;
-
-      sendDataToContent(tabs[0].id);
-    });
-
     if (localStorage.tocatToken && TOCAT_TOOLS.isDomainStored(full)) {
       TOCAT_TOOLS.updateIcon(url);
     } else {
       chrome.browserAction.setBadgeText({text: ''});
     }
+
+    chrome.storage.sync.get(['isAuth', 'token', 'tokenUpdatedAt'], function(storage) {
+      localStorage.tocatToken = storage.token;
+      localStorage.tokenUpdatedAt = storage.tokenUpdatedAt;
+      isAuth = storage.isAuth;
+
+      if (url === contentUrl) {
+        sendDataToContent();
+      }
+    });
   });
 });

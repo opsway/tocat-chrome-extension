@@ -11,12 +11,14 @@
   },
   "permissions": [
     "storage",
+    "tabs",
+    "identity",
     "https://tocat.opsway.com/*",
     "https://accounts.google.com/*",
     "https://*.googleusercontent.com/*",
     "*://*.googleapis.com/*",
-    "tabs",
-    "identity"
+    "https://people.zoho.com/hr",
+    "https://people.zoho.eu/hr"
   ],
   "background": {
     "scripts": ["build/js/background.js"],

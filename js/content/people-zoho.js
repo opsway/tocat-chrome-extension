@@ -97,10 +97,10 @@
           users = parseTable(false);
 
           if (users.length > 0 && isTocatConnected) {
-            init();
+            getData();
           }
         });
-      }, 500);
+      }, 800);
     };
   }
 
@@ -127,7 +127,7 @@
                   isInitiating = false;
                   addSwitcher();
                   filtersHook();
-                });
+                }, 500);
               });
             }
           });
@@ -141,6 +141,7 @@
    */
 
   chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+    sendResponse('ok');
     hashInit(request.isAuth);
   });
 
@@ -166,7 +167,7 @@
       if (isAuth) {
         if (switcher.checked) {
           isTocatConnected = switcher.checked;
-          init();
+          getData();
         } else {
           event.preventDefault();
         }
@@ -639,12 +640,14 @@
    * Initiate content script
    */
 
-  function init() {
+  function getData() {
+    var users = parseTable(false);
+
     showSpinner();
 
     filtersFirstDay = new Date(getDatePeriod().firstDay);
 
-    getTimelog(parseTable(false)).then(function (response) {
+    getTimelog(users).then(function (response) {
       timelog = response.result;
       isContentLoaded = true;
       hideSpinner();
