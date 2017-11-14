@@ -8,6 +8,7 @@
     isInitiated = false,
     isContentLoaded = false,
     isTocatConnected = false,
+    tableBodyId = 'ZPAtt_attmonthlyReportTableBody',
     approvalOptions = {
       w100: {
         leave_type: 'Working',
@@ -81,8 +82,6 @@
   }
 
   function hashInit(localAuth) {
-    var tableBodyId = 'ZPAtt_attmonthlyReportTableBody';
-
     if (location.hash === '#attendance/report/hoursreport') {
       syncData().then(function (storage) {
         isAuth = storage.isAuth;
@@ -401,7 +400,7 @@
         id: 'tocat-issues',
         content: renderIssues(userId, date)
       },
-      modalTitle = usersParsed[userId].name + ' (' + renderDate(date, '/') + ')',
+      modalTitle = usersParsed[userId].name + ' (' + renderDate(date, '/') + ')<div class="fa fa-close fa-pull-right cursor-p" id="modal-close"></div>',
       approvalModal, template;
 
     Object.keys(approvalOptions).forEach(function (option) {
@@ -424,7 +423,7 @@
           title = document.createElement('div');
 
         title.className = 'tingle-modal-box__title';
-        title.textContent = modalTitle;
+        title.innerHTML = modalTitle;
 
         modalBox.prepend(title);
 
@@ -433,6 +432,11 @@
             checkMark.classList.add('draw');
           }, 300);
         }
+      },
+      onOpen: function () {
+        document.getElementById('modal-close').onclick = function () {
+          approvalModal.close();
+        };
       }
     });
 
@@ -535,7 +539,7 @@
           });
 
           cell.setAttribute('data-leave', leaveKey);
-          cell.firstChild.innerHTML = approvalOptions[leaveKey].title;
+          cell.firstChild.innerHTML = approvalOptions[leaveKey].title + '<div class="hours-approved">(' + data.hours + 'h)</div>';
         }
       } else {
         cell.firstChild.textContent = data.hours > 0 ? data.hours + 'h' : '-';
@@ -612,11 +616,15 @@
       searchButton = filters.getElementsByTagName('button')[0];
 
     searchButton.onclick = function () {
-      var users = parseTable(false);
+      setTimeout(function () {
+        waitForElement(tableBodyId, function () {
+          var users = parseTable(false);
 
-      if (users.length > 0 && isTocatConnected) {
-        init();
-      }
+          if (users.length > 0 && isTocatConnected) {
+            init();
+          }
+        });
+      }, 500);
     };
   }
 
