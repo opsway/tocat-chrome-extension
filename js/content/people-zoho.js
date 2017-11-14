@@ -81,12 +81,40 @@
     wait();
   }
 
+  /**
+   * Catch filters changes
+   */
+
+  function filtersHook() {
+    var filters = document.getElementById('ZPAtt_monthlyReportfilter'),
+      searchButton = filters.getElementsByTagName('button')[0];
+
+    searchButton.onclick = function () {
+      setTimeout(function () {
+        var users = parseTable(false);
+
+        waitForElement(tableBodyId, function () {
+          users = parseTable(false);
+
+          if (users.length > 0 && isTocatConnected) {
+            init();
+          }
+        });
+      }, 500);
+    };
+  }
+
+  /**
+   * Init content script
+   * @param localAuth
+   */
+
   function hashInit(localAuth) {
     if (location.hash === '#attendance/report/hoursreport') {
       syncData().then(function (storage) {
         isAuth = storage.isAuth;
 
-        if (!isInitiating && localAuth && isAuth) {
+        if (!isInitiating && isAuth) {
           isInitiating = true;
 
           waitForElement(tableBodyId, function () {
@@ -605,27 +633,6 @@
     });
 
     return data ? false : usersList;
-  }
-
-  /**
-   * Catch filters changes
-   */
-
-  function filtersHook() {
-    var filters = document.getElementById('ZPAtt_monthlyReportfilter'),
-      searchButton = filters.getElementsByTagName('button')[0];
-
-    searchButton.onclick = function () {
-      setTimeout(function () {
-        waitForElement(tableBodyId, function () {
-          var users = parseTable(false);
-
-          if (users.length > 0 && isTocatConnected) {
-            init();
-          }
-        });
-      }, 500);
-    };
   }
 
   /**
