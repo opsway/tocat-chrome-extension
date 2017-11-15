@@ -34,7 +34,7 @@ function injectResources(files) {
   }));
 }
 
-function sendDataToContent(tabUpdated) {
+function sendDataToContent() {
   var data = {
     isAuth: isAuth,
     token: localStorage.tocatToken,
@@ -43,7 +43,7 @@ function sendDataToContent(tabUpdated) {
 
   chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
     chrome.tabs.sendMessage(tabs[0].id, data, function (response) {
-      if (tabs[0].url === contentUrl && tabUpdated && response !== 'ok' && !isExecutingScripts) {
+      if (tabs[0].url === contentUrl && response !== 'ok' && !isExecutingScripts) {
         isExecutingScripts = true;
         injectResources(['build/css/assets.css', 'build/css/content/people-zoho.css', 'build/js/content/people-zoho-libs.js', 'build/js/tools.js', 'build/js/content/people-zoho.js']).then(function () {
           sendDataToContent();
@@ -154,17 +154,17 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
     } else {
       chrome.browserAction.setBadgeText({text: ''});
     }
+
+    chrome.storage.sync.get(['isAuth', 'token', 'tokenUpdatedAt'], function(storage) {
+      localStorage.tocatToken = storage.token;
+      localStorage.tokenUpdatedAt = storage.tokenUpdatedAt;
+      isAuth = storage.isAuth;
+
+      if (url === contentUrl) {
+        sendDataToContent();
+      }
+    });
   }
-
-  chrome.storage.sync.get(['isAuth', 'token', 'tokenUpdatedAt'], function(storage) {
-    localStorage.tocatToken = storage.token;
-    localStorage.tokenUpdatedAt = storage.tokenUpdatedAt;
-    isAuth = storage.isAuth;
-
-    if (url === contentUrl) {
-      sendDataToContent(true);
-    }
-  });
 });
 
 /**

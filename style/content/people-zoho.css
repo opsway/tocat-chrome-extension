@@ -1,7 +1,7 @@
 /* Table */
 
-#ZPAtt_attmonthlyReportTableBody {
-
+.table > tbody > tr.ZPLRow > td {
+    height: 50px;
 }
 
 .ZPLRow td, .ZPLRow td.WKend, .ZPLRow td.WStripe {
@@ -44,9 +44,22 @@
     box-shadow: inset 0 0 2px #101010;
 }
 
+.ZPLRow td:first-child {
+    position: relative;
+    background: #ffffff00;
+    -webkit-transition: left .2s ease-in;
+    -moz-transition: left .2s ease-in;
+    -ms-transition: left .2s ease-in;
+    -o-transition: left .2s ease-in;
+    transition: left .2s ease-in;
+}
+
 .hours-approved {
     font-size: 11px;
-    margin-top: 1px;
+}
+
+.ZPLRow td:first-child.cell-fixed {
+    background: #fff;
 }
 
 /* Legend */

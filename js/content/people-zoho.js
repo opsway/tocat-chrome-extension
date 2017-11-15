@@ -3,9 +3,9 @@
 (function () {
   var timelog = [],
     usersParsed = {},
+    userCells = [],
     isAuth = false,
     isInitiating = false,
-    isInitiated = false,
     isContentLoaded = false,
     isTocatConnected = false,
     tableBodyId = 'ZPAtt_attmonthlyReportTableBody',
@@ -583,20 +583,22 @@
    */
 
   function parseTable(data) {
-    var table = document.getElementById('ZPAtt_attmonthlyReportTableBody'),
+    var table = document.getElementById(tableBodyId),
       rows = [].slice.call(table.getElementsByClassName('ZPLRow')),
       usersList = [];
+
+    userCells = data ? [] : userCells;
 
     [].map.call(rows, function (row) {
       var userId = row.firstChild.children[1].children[0].children[0].innerText,
         userName = row.firstChild.children[1].children[0].lastChild.textContent,
-        cells = [].slice.call(row.childNodes);
+        cells = [].slice.call(row.childNodes), userCell;
 
       usersList.push(userId);
 
       if (data) {
-        // remove first cell from list (with user name)
-        cells.splice(0, 1);
+        userCell = cells.splice(0, 1);
+        userCells.push(userCell);
 
         cells.map(function (cell, index) {
           var day = index + filtersFirstDay.getDate();
@@ -636,6 +638,38 @@
     return data ? false : usersList;
   }
 
+  function tableOnScroll() {
+    var tableContainer = document.getElementById('ZPAtt_attmonthlyReport'),
+      tableHeadRect = tableContainer.getElementsByClassName('ZPLHRow')[0].cells[0].getBoundingClientRect(),
+      breakPointX = tableHeadRect.width,
+      userCell = userCells[0][0],
+      isScrolling;
+
+    tableContainer.onscroll = function (event) {
+      var scrollLeft = event.target.scrollLeft;
+
+      clearTimeout(isScrolling);
+
+      isScrolling = setTimeout(function() {
+        if (userCells.length > 0) {
+          if (scrollLeft > breakPointX) {
+            userCells.map(function (cell) {
+              cell[0].style.left = scrollLeft + 'px';
+              cell[0].classList.add('cell-fixed');
+            });
+          } else {
+            if (userCell.classList.contains('cell-fixed')) {
+              userCells.map(function (cell) {
+                cell[0].style.left = '0px';
+                cell[0].classList.remove('cell-fixed');
+              });
+            }
+          }
+        }
+      }, 66);
+    };
+  }
+
   /**
    * Initiate content script
    */
@@ -653,6 +687,7 @@
       hideSpinner();
       composeLegend();
       parseTable(timelog);
+      tableOnScroll();
     }, function () {
       isContentLoaded = true;
       hideSpinner();
