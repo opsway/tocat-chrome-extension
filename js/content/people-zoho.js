@@ -438,7 +438,7 @@
         issuesKeys.map(function (key) {
           content += '<tr class="tocat-issues-content">' +
             '<td><a href="' + jiraIssueUrl + key + '" target="_blank">' + issueDetails[key].summary + '</a></td>' +
-            '<td>' + issuesHours[key].toPrecision(1) + 'h</td></tr>';
+            '<td>' + Number(issuesHours[key].toFixed(1)) + 'h</td></tr>';
         });
 
         content += '<tfoot><tr><td>TOTAL (' + issuesKeys.length + ' ' + issuesTitile + ')</td><td>' + workday.hours + 'h</td></tr></tfoot></table>';
