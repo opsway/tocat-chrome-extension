@@ -437,7 +437,7 @@
 
         issuesKeys.map(function (key) {
           content += '<tr class="tocat-issues-content">' +
-            '<td><a href="' + jiraIssueUrl + key + '" target="_blank">' + key + ' ' + issueDetails[key].summary + '</a></td>' +
+            '<td><a href="' + jiraIssueUrl + key + '" target="_blank">' + issueDetails[key].summary + '</a></td>' +
             '<td>' + issuesHours[key].toPrecision(1) + 'h</td></tr>';
         });
 
