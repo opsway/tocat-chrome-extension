@@ -9,6 +9,10 @@
     isContentLoaded = false,
     isTocatConnected = false,
     tableBodyId = 'ZPAtt_attmonthlyReportTableBody',
+    apiUrls = {
+      timelogs: '/timelogs',
+      issuesSummary: '/timelogs/issues_summary'
+    },
     approvalOptions = {
       w100: {
         leave_type: 'Working',
@@ -42,6 +46,20 @@
         description: 'Unpaid leave'
       }
     },
+    spinnerTemplate = '<div class="sk-circle">\n' +
+      '            <div class="sk-circle1 sk-child"></div>\n' +
+      '            <div class="sk-circle2 sk-child"></div>\n' +
+      '            <div class="sk-circle3 sk-child"></div>\n' +
+      '            <div class="sk-circle4 sk-child"></div>\n' +
+      '            <div class="sk-circle5 sk-child"></div>\n' +
+      '            <div class="sk-circle6 sk-child"></div>\n' +
+      '            <div class="sk-circle7 sk-child"></div>\n' +
+      '            <div class="sk-circle8 sk-child"></div>\n' +
+      '            <div class="sk-circle9 sk-child"></div>\n' +
+      '            <div class="sk-circle10 sk-child"></div>\n' +
+      '            <div class="sk-circle11 sk-child"></div>\n' +
+      '            <div class="sk-circle12 sk-child"></div>\n' +
+      '        </div>',
     filtersFirstDay, spinner, notification, switcherContainer;
 
   /**
@@ -106,11 +124,10 @@
 
   /**
    * Init content script
-   * @param localAuth
    */
 
-  function hashInit(localAuth) {
-    if (location.hash === '#attendance/report/hoursreport') {
+  function hashInit() {
+    if (location.hash === '#attendance/report/monthlyreport') {
       syncData().then(function (storage) {
         isAuth = storage.isAuth;
 
@@ -142,7 +159,7 @@
 
   chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     sendResponse('ok');
-    hashInit(request.isAuth);
+    hashInit();
   });
 
   /**
@@ -152,7 +169,7 @@
   function addSwitcher() {
     var switcherHtml = '<input type="checkbox" name="tocat-connection" id="tocat-connection" class="checkbox-green ios-toggle"/>\n' +
       '<label for="tocat-connection" class="checkbox-label"></label><span class="switcher-label">JIRA sync</span>',
-      filtersRow = document.getElementById('attendance-report-hoursreport'),
+      filtersRow = document.getElementById('attendance-report-monthlyreport'),
       switcher;
 
     switcherContainer = document.createElement('div');
@@ -236,20 +253,7 @@
     spinnerHtml.id = 'spinner';
     spinnerHtml.classList.add('content-spinner');
     spinnerHtml.classList.add('hidden');
-    spinnerHtml.innerHTML = '<div class="sk-circle">\n' +
-      '            <div class="sk-circle1 sk-child"></div>\n' +
-      '            <div class="sk-circle2 sk-child"></div>\n' +
-      '            <div class="sk-circle3 sk-child"></div>\n' +
-      '            <div class="sk-circle4 sk-child"></div>\n' +
-      '            <div class="sk-circle5 sk-child"></div>\n' +
-      '            <div class="sk-circle6 sk-child"></div>\n' +
-      '            <div class="sk-circle7 sk-child"></div>\n' +
-      '            <div class="sk-circle8 sk-child"></div>\n' +
-      '            <div class="sk-circle9 sk-child"></div>\n' +
-      '            <div class="sk-circle10 sk-child"></div>\n' +
-      '            <div class="sk-circle11 sk-child"></div>\n' +
-      '            <div class="sk-circle12 sk-child"></div>\n' +
-      '        </div>';
+    spinnerHtml.innerHTML = spinnerTemplate;
 
     document.body.appendChild(spinnerHtml);
     document.body.appendChild(notificationHtml);
@@ -358,7 +362,21 @@
   function getTimelog(users) {
     var timePeriod = getDatePeriod();
 
-    return TOCAT_TOOLS.getJSON('/timelogs?date_start=' + timePeriod.firstDay + '&date_end=' + timePeriod.lastDay + '&user_id=' + users.join(','));
+    return TOCAT_TOOLS.getJSON(apiUrls.timelogs + '?date_start=' + timePeriod.firstDay + '&date_end=' + timePeriod.lastDay + '&user_id=' + users.join(','));
+  }
+
+  /**
+   * Get issues summary from JIRA
+   * @param issues
+   * @returns {*}
+   */
+
+  function getIssuesSummary(issues) {
+    var payload = {
+      issues_keys: issues.toString()
+    };
+
+    return TOCAT_TOOLS.postJSON(apiUrls.issuesSummary, payload);
   }
 
   /**
@@ -378,7 +396,7 @@
       percentage: (percentage || 1.0).toString()
     };
 
-    return TOCAT_TOOLS.postJSON('/timelogs', payload);
+    return TOCAT_TOOLS.postJSON(apiUrls.timelogs, payload);
   }
 
   /**
@@ -389,25 +407,51 @@
    * @returns {*}
    */
 
-  function renderIssues(userId, date) {
+  function renderIssues(userId, date, elementId) {
     var workday = getTimelogItem(userId, date),
+      issuesKeys = [],
+      issuesHours = {},
+      issuesContainer = document.getElementById(elementId),
       content, issuesTitile;
 
     if (workday && workday.issues.length > 0) {
       issuesTitile = workday.issues.length > 1 ? 'issues' : 'issue';
 
-      content = '<table class="tocat-table table-fixed"><thead><tr><th>ISSUES</th><th>Time</th></tr></thead>';
+      content = '<table class="tocat-table table-fixed opacity-0 fadeIn"><thead><tr><th>ISSUES</th><th>Time</th></tr></thead>';
 
       workday.issues.map(function (issue) {
-        content += '<tr class="tocat-issues-content"><td><a href="https://opsway.atlassian.net/browse/' + issue.issue_key + '" target="_blank">' + issue.issue_key + '</a></td><td>' + issue.hours + 'h</td></tr>';
+        if (!issuesKeys.includes(issue.issue_key)) {
+          issuesKeys.push(issue.issue_key);
+        }
+
+        if (issuesHours[issue.issue_key]) {
+          issuesHours[issue.issue_key] += issue.hours;
+        } else {
+          issuesHours[issue.issue_key] = issue.hours;
+        }
       });
 
-      content += '<tfoot><tr><td>TOTAL (' + workday.issues.length + ' ' + issuesTitile + ')</td><td>' + workday.hours + 'h</td></tr></tfoot></table>';
-    } else {
-      content = '<div class="no-result">No logged time in issues</div>';
-    }
+      getIssuesSummary(issuesKeys).then(function (response) {
+        var issueDetails = response.result,
+          jiraIssueUrl = 'https://opsway.atlassian.net/browse/';
 
-    return content;
+        issuesKeys.map(function (key) {
+          content += '<tr class="tocat-issues-content">' +
+            '<td><a href="' + jiraIssueUrl + key + '" target="_blank">' + key + ' ' + issueDetails[key].summary + '</a></td>' +
+            '<td>' + issuesHours[key].toPrecision(1) + 'h</td></tr>';
+        });
+
+        content += '<tfoot><tr><td>TOTAL (' + issuesKeys.length + ' ' + issuesTitile + ')</td><td>' + workday.hours + 'h</td></tr></tfoot></table>';
+
+        issuesContainer.innerHTML =  content;
+      }, function () {
+        showNotification('TOCAT Server error occurred!', 'error');
+
+        issuesContainer.innerHTML = '<div class="no-result error opacity-0 fadeIn">No issues has been loaded. Try again later.</div>';
+      });
+    } else {
+      issuesContainer.innerHTML = '<div class="no-result opacity-0 fadeIn">No logged time in issues</div>';
+    }
   }
 
   /**
@@ -421,13 +465,14 @@
 
   function openApproveModal(userId, day, cell, isApproved) {
     var date = new Date(filtersFirstDay.getFullYear(), filtersFirstDay.getMonth(), day),
+      workday = getTimelogItem(userId, date),
       form = {
         id: 'approvalForm',
         content: ''
       },
       issues = {
         id: 'tocat-issues',
-        content: renderIssues(userId, date)
+        content: workday.issues.length > 0 ? spinnerTemplate : ''
       },
       modalTitle = usersParsed[userId].name + ' (' + renderDate(date, '/') + ')<div class="fa fa-close fa-pull-right cursor-p" id="modal-close"></div>',
       approvalModal, template;
@@ -466,6 +511,8 @@
         document.getElementById('modal-close').onclick = function () {
           approvalModal.close();
         };
+
+        renderIssues(userId, date, issues.id);
       }
     });
 
