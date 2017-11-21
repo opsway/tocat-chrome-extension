@@ -537,7 +537,7 @@
         approveDay(userId, renderDate(date, '-', true), approvalOptions[checkedValue].leave_type, approvalOptions[checkedValue].percentage).then(function (response) {
           var approvedCell = usersParsed[userId].cells[day - filtersFirstDay.getDate()];
 
-          approvedCell.firstChild.innerHTML = approvalOptions[checkedValue].title;
+          approvedCell.firstChild.innerHTML = approvalOptions[checkedValue].title + '<div class="hours-approved">(' + workday.hours + 'h)</div>';
           approvedCell.classList.add('approved');
           approvedCell.setAttribute('data-leave', checkedValue);
           hideSpinner();
