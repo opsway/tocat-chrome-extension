@@ -1,5 +1,6 @@
 var isAuth = false,
   isExecutingScripts = false,
+  tokenExpired = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2VtYWlsIjoiYW5iYWxAb3Bzd2F5LmNvbSIsImV4cCI6MTUxMTM4MTU5OX0.u6lFf8bmE-A5N91dI0VBJjorraMewPn465qXWhFp-GU',
   contentUrl = 'https://people.zoho.com/hr#attendance/report/monthlyreport';
 
 bkg = chrome.extension.getBackgroundPage();
@@ -32,6 +33,16 @@ function injectResources(files) {
       });
     });
   }));
+}
+
+function sessionEnd() {
+  localStorage.tocatToken = '';
+  isAuth = false;
+  chrome.storage.sync.clear(function () {
+    chrome.storage.sync.set({token: '', isAuth: false}, function() {
+      sendDataToContent();
+    });
+  });
 }
 
 function sendDataToContent() {
@@ -74,10 +85,11 @@ function initAuth(url) {
             localStorage.tocatToken = result;
             localStorage.tokenUpdatedAt = Date.now();
             isAuth = true;
-
-            chrome.storage.sync.set({token: localStorage.tocatToken, tokenUpdatedAt: localStorage.tokenUpdatedAt, isAuth: isAuth}, function () {
-              chrome.tabs.update(initialTab.id, {active: true}, function () {
-                chrome.tabs.remove(tabId);
+            chrome.storage.sync.clear(function () {
+              chrome.storage.sync.set({token: localStorage.tocatToken, tokenUpdatedAt: localStorage.tokenUpdatedAt, isAuth: isAuth}, function () {
+                chrome.tabs.update(initialTab.id, {active: true}, function () {
+                  chrome.tabs.remove(tabId);
+                });
               });
             });
           }
@@ -110,21 +122,24 @@ chrome.extension.onConnect.addListener(function(port) {
       case 'setToken':
         localStorage.tocatToken = msg.token;
         localStorage.tokenUpdatedAt = Date.now();
+
         break;
       case 'initAuth':
         initAuth(msg.url);
+
         break;
       case 'logout':
         isAuth = false;
+        localStorage.tocatToken = '';
 
         syncData();
         break;
       case 'getToken':
-        if (!TOCAT_TOOLS.isTokenValid(localStorage.tokenUpdatedAt)) {
+        /*if (!TOCAT_TOOLS.isTokenValid(localStorage.tokenUpdatedAt)) {
           isAuth = false;
           localStorage.tokenUpdatedAt = '';
           localStorage.tocatToken = '';
-        }
+        }*/
 
         syncData();
         break;
@@ -155,15 +170,15 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
       chrome.browserAction.setBadgeText({text: ''});
     }
 
-    chrome.storage.sync.get(['isAuth', 'token', 'tokenUpdatedAt'], function(storage) {
-      localStorage.tocatToken = storage.token;
-      localStorage.tokenUpdatedAt = storage.tokenUpdatedAt;
-      isAuth = storage.isAuth;
+    if (url === contentUrl) {
+      chrome.storage.sync.get(['isAuth', 'token', 'tokenUpdatedAt'], function(storage) {
+        localStorage.tocatToken = storage.token;
+        localStorage.tokenUpdatedAt = storage.tokenUpdatedAt;
+        isAuth = storage.isAuth;
 
-      if (url === contentUrl) {
         sendDataToContent();
-      }
-    });
+      });
+    }
   }
 });
 
@@ -188,14 +203,14 @@ chrome.tabs.onActivated.addListener(function() {
       chrome.browserAction.setBadgeText({text: ''});
     }
 
-    chrome.storage.sync.get(['isAuth', 'token', 'tokenUpdatedAt'], function(storage) {
-      localStorage.tocatToken = storage.token;
-      localStorage.tokenUpdatedAt = storage.tokenUpdatedAt;
-      isAuth = storage.isAuth;
+    if (url === contentUrl) {
+      chrome.storage.sync.get(['isAuth', 'token', 'tokenUpdatedAt'], function(storage) {
+        localStorage.tocatToken = storage.token;
+        localStorage.tokenUpdatedAt = storage.tokenUpdatedAt;
+        isAuth = storage.isAuth;
 
-      if (url === contentUrl) {
         sendDataToContent();
-      }
-    });
+      });
+    }
   });
 });

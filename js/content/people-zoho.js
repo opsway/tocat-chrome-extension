@@ -8,6 +8,7 @@
     isInitiating = false,
     isContentLoaded = false,
     isTocatConnected = false,
+    port = chrome.runtime.connect({name: 'zoho'}),
     tableBodyId = 'ZPAtt_attmonthlyReportTableBody',
     apiUrls = {
       timelogs: '/timelogs',
@@ -60,7 +61,7 @@
       '            <div class="sk-circle11 sk-child"></div>\n' +
       '            <div class="sk-circle12 sk-child"></div>\n' +
       '        </div>',
-    filtersFirstDay, spinner, notification, switcherContainer;
+    filtersFirstDay, spinner, notification, switcherContainer, switcher;
 
   /**
    * Get data from Google Sync storage
@@ -129,7 +130,7 @@
   function hashInit() {
     if (location.hash === '#attendance/report/monthlyreport') {
       syncData().then(function (storage) {
-        isAuth = storage.isAuth;
+        isAuth = storage.token;
 
         if (!isInitiating && isAuth) {
           isInitiating = true;
@@ -162,15 +163,26 @@
     hashInit();
   });
 
+  function sessionEnd(error) {
+    isAuth = false;
+    switcher.checked = false;
+    hideSpinner();
+    showNotification('Session has been ended. Sign in, please.', 'error');
+    TOCAT_TOOLS.setTokenHeader('');
+
+    port.postMessage({
+      name: 'logout'
+    });
+  }
+
   /**
-   * Add JIRA sync switcher element
+   * Add JIRA sync switcher element and hide Day/Hour tabs
    */
 
   function addSwitcher() {
     var switcherHtml = '<input type="checkbox" name="tocat-connection" id="tocat-connection" class="checkbox-green ios-toggle"/>\n' +
       '<label for="tocat-connection" class="checkbox-label"></label><span class="switcher-label">JIRA sync</span>',
-      filtersRow = document.getElementById('attendance-report-monthlyreport'),
-      switcher;
+      filtersRow = document.getElementById('attendance-report-monthlyreport');
 
     switcherContainer = document.createElement('div');
     switcherContainer.className = 'switcher-container';
@@ -193,6 +205,8 @@
         showNotification('You are not authenticated in TOCAT plugin', 'error');
       }
     };
+
+    document.getElementById('ZPAtt_month_Report').classList.add('hidden');
   }
 
   /**
@@ -444,8 +458,9 @@
         content += '<tfoot><tr><td>TOTAL (' + issuesKeys.length + ' ' + issuesTitile + ')</td><td>' + workday.hours + 'h</td></tr></tfoot></table>';
 
         issuesContainer.innerHTML =  content;
-      }, function () {
+      }, function (error) {
         showNotification('TOCAT Server error occurred!', 'error');
+        sessionEnd(error);
 
         issuesContainer.innerHTML = '<div class="no-result error opacity-0 fadeIn">No issues has been loaded. Try again later.</div>';
       });
@@ -543,8 +558,9 @@
           hideSpinner();
           approvalModal.destroy();
           showNotification('Updated successfully!');
-        }, function () {
+        }, function (error) {
           hideSpinner();
+          sessionEnd(error);
           showNotification('TOCAT Server error occurred!', 'error');
         });
       });
@@ -735,9 +751,10 @@
       composeLegend();
       parseTable(timelog);
       tableOnScroll();
-    }, function () {
+    }, function (error) {
       isContentLoaded = true;
       hideSpinner();
+      sessionEnd(error);
       showNotification('TOCAT Server error occurred!', 'error');
     });
   }

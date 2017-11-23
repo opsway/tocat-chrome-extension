@@ -127,9 +127,19 @@ document.addEventListener('DOMContentLoaded', function() {
    * Show alert with message
    * @param data
    */
+
   function errorCather(data) {
     bootbox.alert(JSON.stringify(data), function() {
 
+    });
+
+    sessionEnd(data);
+  }
+
+  function sessionEnd(error) {
+    hideContent();
+    port.postMessage({
+      name: 'logout'
     });
   }
 
@@ -605,7 +615,7 @@ document.addEventListener('DOMContentLoaded', function() {
     metadata[0].values = adjustAllOrders(allOrders);
 
     editableGrid = new EditableGrid("GridJsData", {
-      modelChanged: function(rowIdx, colIdx, oldValue, newValue, row) {;
+      modelChanged: function(rowIdx, colIdx, oldValue, newValue, row) {
         // ticket budget changed
         if (colIdx === 2) {
           var orderId = editableGrid.getValueAt(rowIdx, 0);
@@ -657,7 +667,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }, errorCather);
                   });
                 }, errorCather);
-              });
+              }, sessionEnd);
             }
           }
         }
@@ -1099,7 +1109,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   initTable(data[0], task.orders, data[1].budget);
                 }, errorCather);
               }
-            });
+            }, sessionEnd);
           }
         } else {
           if (checkAccessControl(TASK_ACL.MODIFY_BUDGETS)) {
@@ -1139,17 +1149,18 @@ document.addEventListener('DOMContentLoaded', function() {
       return TOCAT_TOOLS.getJSON('/tasks/?search=external_id=' + data).then(function(data) {
         if (data.length) {
           rebuildSelect(data[0].potential_resolvers, true, data[0].resolver.id);
+
           return TOCAT_TOOLS.getJSON('/task/' + data[0].id).then(function(receivedTask) {
             return receivedTask;
-          });
+          }, sessionEnd);
         } else {
           return company.getAllDevelopers().then(function(data) {
             rebuildSelect(data);
             showOrderText('No orders yet, please add one');
             return {};
-          });
+          }, sessionEnd);
         }
-      })
+      }, sessionEnd)
     })
   }
 
@@ -1289,6 +1300,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function initPopup(token) {
     TOCAT_TOOLS.setTokenHeader(token);
     // me.getOrdersOfMyTeam();
+    console.log('initPopup(token): ', token);
     getACL().then(function () {
       if (checkAccessControl(TASK_ACL.SHOW_AGGREGATED_INFO)) {
         renderContent();
@@ -1303,9 +1315,11 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.style.height = '200px';
         showErrors(["you don't have permission"]);
       }
-    }, function() {
+    }, function(error) {
+      sessionEnd(error);
+      hideContent();
       document.body.style.height = '200px';
-      showErrors(["you don't have permission"]);
+      showErrors(["Session lost. You need to sign in  "]);
     });
   }
 
@@ -1328,6 +1342,7 @@ document.addEventListener('DOMContentLoaded', function() {
   port.onMessage.addListener(function(msg) {
     switch (msg.name) {
       case 'getToken':
+        console.log('getToken msg: ', msg);
         if (msg.isAuth && msg.token && msg.token !== '' && TOCAT_TOOLS.isTokenValid(msg.tokenUpdatedAt)) {
           hideLoginButton();
           initPopup(msg.token);
