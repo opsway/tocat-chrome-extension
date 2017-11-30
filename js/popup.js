@@ -125,22 +125,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
   /**
    * Show alert with message
-   * @param data
+   * @param {Object} data
+   * @param {Number} status
    */
 
-  function errorCather(data) {
-    bootbox.alert(JSON.stringify(data), function() {
-
+  function errorCather(data, status) {
+    bootbox.alert(JSON.stringify(data.result), function() {
+      sessionEnd(status);
     });
-
-    sessionEnd(data);
   }
 
-  function sessionEnd(error) {
-    hideContent();
-    port.postMessage({
-      name: 'logout'
-    });
+  function sessionEnd(status) {
+    if (status === 401) {
+      hideContent();
+      port.postMessage({
+        name: 'logout'
+      });
+    }
   }
 
   function hideTable() {
@@ -667,7 +668,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }, errorCather);
                   });
                 }, errorCather);
-              }, sessionEnd);
+              }, errorCather);
             }
           }
         }
@@ -1109,7 +1110,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   initTable(data[0], task.orders, data[1].budget);
                 }, errorCather);
               }
-            }, sessionEnd);
+            }, errorCather);
           }
         } else {
           if (checkAccessControl(TASK_ACL.MODIFY_BUDGETS)) {
@@ -1152,15 +1153,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
           return TOCAT_TOOLS.getJSON('/task/' + data[0].id).then(function(receivedTask) {
             return receivedTask;
-          }, sessionEnd);
+          }, errorCather);
         } else {
           return company.getAllDevelopers().then(function(data) {
             rebuildSelect(data);
             showOrderText('No orders yet, please add one');
             return {};
-          }, sessionEnd);
+          }, errorCather);
         }
-      }, sessionEnd)
+      }, errorCather)
     })
   }
 
@@ -1315,12 +1316,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.style.height = '200px';
         showErrors(["you don't have permission"]);
       }
-    }, function(error) {
-      sessionEnd(error);
-      hideContent();
-      document.body.style.height = '200px';
-      showErrors(["Session lost. You need to sign in  "]);
-    });
+    }, errorCather);
   }
 
   function logout() {
@@ -1343,7 +1339,7 @@ document.addEventListener('DOMContentLoaded', function() {
     switch (msg.name) {
       case 'getToken':
         console.log('getToken msg: ', msg);
-        if (msg.isAuth && msg.token && msg.token !== '' && TOCAT_TOOLS.isTokenValid(msg.tokenUpdatedAt)) {
+        if (msg.isAuth && msg.token && msg.token !== '') {
           hideLoginButton();
           initPopup(msg.token);
         } else {

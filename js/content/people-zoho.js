@@ -161,18 +161,30 @@
   chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     sendResponse('ok');
     hashInit();
+
+    if (!request.isAuth) {
+      isAuth = false;
+      switcher.checked = false;
+      hideSpinner();
+      TOCAT_TOOLS.setTokenHeader('');
+    }
   });
 
-  function sessionEnd(error) {
-    isAuth = false;
-    switcher.checked = false;
-    hideSpinner();
-    showNotification('Session has been ended. Sign in, please.', 'error');
-    TOCAT_TOOLS.setTokenHeader('');
+  function sessionEnd(error, status) {
+    console.log('Error: ', error);
+    console.log('Status: %s, type: %s', status, typeof status);
 
-    port.postMessage({
-      name: 'logout'
-    });
+    if (status === 401) {
+      isAuth = false;
+      switcher.checked = false;
+      hideSpinner();
+      showNotification('Session has been ended. Sign in, please.', 'error');
+      TOCAT_TOOLS.setTokenHeader('');
+
+      port.postMessage({
+        name: 'logout'
+      });
+    }
   }
 
   /**
@@ -458,9 +470,9 @@
         content += '<tfoot><tr><td>TOTAL (' + issuesKeys.length + ' ' + issuesTitile + ')</td><td>' + workday.hours + 'h</td></tr></tfoot></table>';
 
         issuesContainer.innerHTML =  content;
-      }, function (error) {
+      }, function (error, status) {
         showNotification('TOCAT Server error occurred!', 'error');
-        sessionEnd(error);
+        sessionEnd(error, status);
 
         issuesContainer.innerHTML = '<div class="no-result error opacity-0 fadeIn">No issues has been loaded. Try again later.</div>';
       });
@@ -558,9 +570,9 @@
           hideSpinner();
           approvalModal.destroy();
           showNotification('Updated successfully!');
-        }, function (error) {
+        }, function (error, status) {
           hideSpinner();
-          sessionEnd(error);
+          sessionEnd(error, status);
           showNotification('TOCAT Server error occurred!', 'error');
         });
       });
@@ -751,10 +763,10 @@
       composeLegend();
       parseTable(timelog);
       tableOnScroll();
-    }, function (error) {
+    }, function (error, status) {
       isContentLoaded = true;
       hideSpinner();
-      sessionEnd(error);
+      sessionEnd(error, status);
       showNotification('TOCAT Server error occurred!', 'error');
     });
   }
