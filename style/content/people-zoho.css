@@ -230,6 +230,7 @@
 
 .tocat-table {
     width: 100%;
+    font-family: LatoWeb, sans-serif;
 }
 
 .tocat-table th, .tocat-table td {

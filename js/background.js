@@ -4,7 +4,6 @@ var isAuth = false,
 
 bkg = chrome.extension.getBackgroundPage();
 localStorage.tocatToken = '';
-localStorage.tokenUpdatedAt = '';
 localStorage.storedDomains = '{}';
 
 function injectResources(files) {
@@ -34,22 +33,33 @@ function injectResources(files) {
   }));
 }
 
+function sessionEnd() {
+  localStorage.tocatToken = '';
+  isAuth = false;
+  chrome.storage.sync.clear(function () {
+    chrome.storage.sync.set({token: '', isAuth: false}, function() {
+      sendDataToContent();
+    });
+  });
+}
+
 function sendDataToContent() {
   var data = {
     isAuth: isAuth,
-    token: localStorage.tocatToken,
-    tokenUpdatedAt: localStorage.tokenUpdatedAt
+    token: localStorage.tocatToken
   };
 
   chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
-    chrome.tabs.sendMessage(tabs[0].id, data, function (response) {
-      if (tabs[0].url === contentUrl && response !== 'ok' && !isExecutingScripts) {
-        isExecutingScripts = true;
-        injectResources(['build/css/assets.css', 'build/css/content/people-zoho.css', 'build/js/content/people-zoho-libs.js', 'build/js/tools.js', 'build/js/content/people-zoho.js']).then(function () {
-          sendDataToContent();
-        });
-      }
-    });
+    if (tabs[0]) {
+      chrome.tabs.sendMessage(tabs[0].id, data, function (response) {
+        if (tabs[0].url === contentUrl && response !== 'ok' && !isExecutingScripts) {
+          isExecutingScripts = true;
+          injectResources(['build/css/assets.css', 'build/css/content/people-zoho.css', 'build/js/content/people-zoho-libs.js', 'build/js/tools.js', 'build/js/content/people-zoho.js']).then(function () {
+            sendDataToContent();
+          });
+        }
+      });
+    }
   });
 }
 
@@ -72,12 +82,12 @@ function initAuth(url) {
             chrome.tabs.onUpdated.removeListener(googleAuthorizationHook);
             TOCAT_TOOLS.setTokenHeader(result);
             localStorage.tocatToken = result;
-            localStorage.tokenUpdatedAt = Date.now();
             isAuth = true;
-
-            chrome.storage.sync.set({token: localStorage.tocatToken, tokenUpdatedAt: localStorage.tokenUpdatedAt, isAuth: isAuth}, function () {
-              chrome.tabs.update(initialTab.id, {active: true}, function () {
-                chrome.tabs.remove(tabId);
+            chrome.storage.sync.clear(function () {
+              chrome.storage.sync.set({token: localStorage.tocatToken, isAuth: isAuth}, function () {
+                chrome.tabs.update(initialTab.id, {active: true}, function () {
+                  chrome.tabs.remove(tabId);
+                });
               });
             });
           }
@@ -96,11 +106,10 @@ chrome.extension.onConnect.addListener(function(port) {
     port.postMessage({
       name: 'getToken',
       token: localStorage.tocatToken,
-      tokenUpdatedAt: localStorage.tokenUpdatedAt,
       isAuth: isAuth
     });
 
-    chrome.storage.sync.set({token: localStorage.tocatToken, tokenUpdatedAt: localStorage.tokenUpdatedAt, isAuth: isAuth}, function() {
+    chrome.storage.sync.set({token: localStorage.tocatToken, isAuth: isAuth}, function() {
       sendDataToContent();
     });
   };
@@ -109,23 +118,19 @@ chrome.extension.onConnect.addListener(function(port) {
     switch (msg.name) {
       case 'setToken':
         localStorage.tocatToken = msg.token;
-        localStorage.tokenUpdatedAt = Date.now();
+
         break;
       case 'initAuth':
         initAuth(msg.url);
+
         break;
       case 'logout':
         isAuth = false;
+        localStorage.tocatToken = '';
 
         syncData();
         break;
       case 'getToken':
-        if (!TOCAT_TOOLS.isTokenValid(localStorage.tokenUpdatedAt)) {
-          isAuth = false;
-          localStorage.tokenUpdatedAt = '';
-          localStorage.tocatToken = '';
-        }
-
         syncData();
         break;
       default:
@@ -155,15 +160,14 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
       chrome.browserAction.setBadgeText({text: ''});
     }
 
-    chrome.storage.sync.get(['isAuth', 'token', 'tokenUpdatedAt'], function(storage) {
-      localStorage.tocatToken = storage.token;
-      localStorage.tokenUpdatedAt = storage.tokenUpdatedAt;
-      isAuth = storage.isAuth;
+    if (url === contentUrl) {
+      chrome.storage.sync.get(['isAuth', 'token'], function(storage) {
+        localStorage.tocatToken = storage.token;
+        isAuth = storage.isAuth;
 
-      if (url === contentUrl) {
         sendDataToContent();
-      }
-    });
+      });
+    }
   }
 });
 
@@ -188,14 +192,13 @@ chrome.tabs.onActivated.addListener(function() {
       chrome.browserAction.setBadgeText({text: ''});
     }
 
-    chrome.storage.sync.get(['isAuth', 'token', 'tokenUpdatedAt'], function(storage) {
-      localStorage.tocatToken = storage.token;
-      localStorage.tokenUpdatedAt = storage.tokenUpdatedAt;
-      isAuth = storage.isAuth;
+    if (url === contentUrl) {
+      chrome.storage.sync.get(['isAuth', 'token'], function(storage) {
+        localStorage.tocatToken = storage.token;
+        isAuth = storage.isAuth;
 
-      if (url === contentUrl) {
         sendDataToContent();
-      }
-    });
+      });
+    }
   });
 });

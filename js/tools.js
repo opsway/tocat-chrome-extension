@@ -47,7 +47,7 @@ var TOCAT_TOOLS = (function() {
         if (status >= 200 && status < 400) {
           resolve(xhr.response);
         } else {
-          reject(xhr.response);
+          reject(xhr.response, status);
         }
         counterResponse += 1;
         checkCounters();
@@ -73,7 +73,7 @@ var TOCAT_TOOLS = (function() {
         if (status === 200) {
           resolve(xhr.response);
         } else {
-          reject(xhr.response);
+          reject(xhr.response, status);
         }
         counterResponse += 1;
         checkCounters();
@@ -101,7 +101,7 @@ var TOCAT_TOOLS = (function() {
         if (status >= 200 && status < 400) {
           resolve(xhr.response);
         } else {
-          reject(xhr.response);
+          reject(xhr.response, status);
         }
         counterResponse += 1;
         checkCounters();
