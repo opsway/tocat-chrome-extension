@@ -1,7 +1,12 @@
 /* Table */
 
 .table > tbody > tr.ZPLRow > td {
-    height: 50px;
+    height: 57px;
+    min-width: 50px;
+}
+
+.table > thead > tr.ZPLHRow > th {
+    min-width: 50px !important;
 }
 
 .ZPLRow td, .ZPLRow td.WKend, .ZPLRow td.WStripe {

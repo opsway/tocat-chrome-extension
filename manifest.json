@@ -26,7 +26,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://people.zoho.com/hr*", "https://people.zoho.eu/hr*"],
+      "matches": ["https://people.zoho.com/opsway/hr*", "https://people.zoho.eu/opsway/hr*"],
       "css": ["build/css/assets.css", "build/css/content/people-zoho.css"],
       "js": ["build/js/content/people-zoho-libs.js", "build/js/tools.js", "build/js/content/people-zoho.js"],
       "run_at": "document_end"

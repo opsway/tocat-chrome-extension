@@ -1,6 +1,6 @@
 var isAuth = false,
   isExecutingScripts = false,
-  contentUrl = 'https://people.zoho.com/hr#attendance/report/monthlyreport';
+  contentUrl = 'https://people.zoho.com/opsway/hr#attendance/report/monthlyreport';
 
 bkg = chrome.extension.getBackgroundPage();
 localStorage.tocatToken = '';

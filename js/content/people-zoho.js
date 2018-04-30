@@ -762,7 +762,7 @@
       hideSpinner();
       composeLegend();
       parseTable(timelog);
-      tableOnScroll();
+      // tableOnScroll();
     }, function (error, status) {
       isContentLoaded = true;
       hideSpinner();
