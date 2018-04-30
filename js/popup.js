@@ -242,6 +242,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     return getOrder(orderId).then(function(order) {
+      console.log(order);
       return company.getAllDevelopers(order.team.name);
     });
   }
@@ -274,7 +275,11 @@ document.addEventListener('DOMContentLoaded', function() {
    * @returns {*}
    */
   function setAcceptStatus(task) {
-    return TOCAT_TOOLS.postJSON('/task/' + task.id + '/accept');
+    return TOCAT_TOOLS.postJSON('/task/' + task.id + '/accept').then(function (response) {
+      // Success event
+    }, function (err) {
+      showErrors(err.errors);
+    });
   }
 
   /**
@@ -283,7 +288,11 @@ document.addEventListener('DOMContentLoaded', function() {
    * @returns {*}
    */
   function rmAcceptStatus(task) {
-    return TOCAT_TOOLS.deleteJSON('/task/' + task.id + '/accept');
+    return TOCAT_TOOLS.deleteJSON('/task/' + task.id + '/accept').then(function (response) {
+      // Success event
+    }, function (err) {
+      showErrors(err.errors);
+    });
   }
 
   /**
@@ -1085,6 +1094,15 @@ document.addEventListener('DOMContentLoaded', function() {
     setPaidStatusOfTask(task.paid);
     setAcceptedStatusOfTask(task.accepted);
     setExpenseStatusOfTask(task.expenses);
+
+    task.orders.map(function(order) {
+      if (order.completed) {
+        document.getElementById('checkbox-accepted').disabled = true;
+        document.getElementById('checkbox-expense').disabled = true;
+      }
+    });
+
+    document.getElementById('checkbox-request-review').disabled = true;
 
     if (task.resolver && task.resolver.id) {
       setResolverOfTask(task.resolver.id);
