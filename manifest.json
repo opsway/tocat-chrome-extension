@@ -17,8 +17,8 @@
     "https://accounts.google.com/*",
     "https://*.googleusercontent.com/*",
     "*://*.googleapis.com/*",
-    "https://people.zoho.com/hr",
-    "https://people.zoho.eu/hr"
+    "https://people.zoho.com/opsway/hr",
+    "https://people.zoho.eu/opsway/hr"
   ],
   "background": {
     "scripts": ["build/js/background.js"],
