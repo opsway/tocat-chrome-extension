@@ -242,7 +242,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     return getOrder(orderId).then(function(order) {
-      console.log(order);
       return company.getAllDevelopers(order.team.name);
     });
   }
